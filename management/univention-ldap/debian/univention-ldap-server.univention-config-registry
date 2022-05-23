@@ -122,6 +122,7 @@ Variables: ldap/overlay/sock
 Variables: ldap/overlay/sock/sockops
 Variables: ldap/refint
 Variables: server/role
+Variables: ldap/overlay/sssvlv/.*
 
 Type: subfile
 Multifile: etc/ldap/slapd.conf
