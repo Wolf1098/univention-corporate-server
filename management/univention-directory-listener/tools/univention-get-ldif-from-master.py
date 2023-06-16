@@ -14,7 +14,7 @@ import io
 import logging
 import os
 import sys
-from typing import IO  # noqa: F401
+from typing import IO
 
 import ldap
 import ldif
@@ -34,8 +34,7 @@ OIDS = set(replication.BUILTIN_OIDS) | set('1.3.6.1.4.1.4203.666.11.1.4.2.12.1')
 
 
 # from replication.py
-def _update_schema(fp, attr):
-    # type: (IO[str], str) -> None
+def _update_schema(fp: IO[str], attr: str) -> None:
     subschema = ldap.schema.SubSchema(attr)
     for oid in replication.subschema_sort(subschema, ldap.schema.AttributeType):
         if oid in OIDS:
@@ -50,8 +49,7 @@ def _update_schema(fp, attr):
         fp.write('objectclass %s\n' % (obj,))
 
 
-def update_schema(lo):
-    # type: (uldap.access) -> None
+def update_schema(lo: uldap.access) -> None:
     """update the ldap schema file"""
     logging.info('Fetching Schema ...')
     res = lo.search(base="cn=Subschema", scope=ldap.SCOPE_BASE, filter='(objectclass=*)', attr=['+', '*'])
@@ -66,8 +64,7 @@ def update_schema(lo):
     os.rename(tmp, SCHEMA)
 
 
-def create_ldif_from_master(lo, ldif_file, base, page_size):
-    # type: (uldap.access, str, str, int) -> None
+def create_ldif_from_master(lo: uldap.access, ldif_file: str, base: str, page_size: int) -> None:
     """create ldif file from everything from lo"""
     logging.info('Fetching LDIF ...')
     output = sys.stdout if ldif_file == "-" else io.StringIO()
@@ -112,8 +109,7 @@ def create_ldif_from_master(lo, ldif_file, base, page_size):
     output.close()
 
 
-def main():
-    # type: () -> None
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("-l", "--ldif", action="store_true", help="Create LDIF file")
     parser.add_argument("-s", "--schema", action="store_true", help="Update LDAP schema [%s]" % SCHEMA)
