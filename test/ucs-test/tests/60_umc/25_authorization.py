@@ -289,7 +289,7 @@ def test_modify_attr(ldap_base, bremen_ou, login_user, user_dn, changes, expecte
     ('admin', True),
     ('ou_admin', False),
 ])
-def test_mail_domain_delete(ldap_base, bremen_ou, random_username, login_user, expected):
+def test_mail_domain_remove(ldap_base, bremen_ou, random_username, login_user, expected):
     domain_name = f"{random_username()}.test.com"
     mail_domain_dn = bremen_ou.udm.create_object('mail/domain', name=domain_name)
 
@@ -313,3 +313,4 @@ def test_mail_domain_delete(ldap_base, bremen_ou, random_username, login_user, e
         bremen_ou.udm.remove_object('mail/domain', dn=mail_domain_dn)
     else:
         client.umc_command('udm/remove', options, 'mail/domain')
+
