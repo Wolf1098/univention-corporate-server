@@ -298,7 +298,7 @@ def test_mail_domain_remove(ldap_base, bremen_ou, random_username, login_user, e
     elif login_user == "ou_admin":
         client = Client()
         client.authenticate(bremen_ou.ouadmin_username, 'univention')
-        
+
     options = [{
         'object': mail_domain_dn,
         "options": {
