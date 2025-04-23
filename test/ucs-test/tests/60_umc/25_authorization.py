@@ -313,4 +313,3 @@ def test_mail_domain_remove(ldap_base, bremen_ou, random_username, login_user, e
         bremen_ou.udm.remove_object('mail/domain', dn=mail_domain_dn)
     else:
         client.umc_command('udm/remove', options, 'mail/domain')
-
