@@ -1,4 +1,4 @@
-ucs-test (12.1.11) unstable; urgency=medium
+ucs-test (12.1.12) unstable; urgency=medium
 
   * Issue univention/ucs#2815: add test file 60_umc/106_udm_syntax_choices_dn_check.py
 
