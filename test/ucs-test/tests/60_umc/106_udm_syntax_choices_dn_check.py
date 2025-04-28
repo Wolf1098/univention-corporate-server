@@ -7,9 +7,10 @@
 ## exposure: safe
 
 import unittest
+
 import univention.admin.syntax as udm_syntax
-from univention.management.console.modules.udm.udm_ldap import read_syntax_choices, set_user_roles
 from univention.management.console.ldap import get_admin_connection
+from univention.management.console.modules.udm.udm_ldap import read_syntax_choices, set_user_roles
 
 
 class SyntaxWithDNChoices(udm_syntax.select):
