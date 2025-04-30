@@ -7,6 +7,7 @@
 ## exposure: safe
 
 import unittest
+
 import pytest
 
 from univention.admin.uldap import getAdminConnection
