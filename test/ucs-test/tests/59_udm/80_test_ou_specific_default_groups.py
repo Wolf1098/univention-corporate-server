@@ -374,9 +374,13 @@ def test_position_change_after_open(udm):
     final_ldap_pos.setDn(ou2_dn)
     user_obj.position = final_ldap_pos
 
-    # Crucially, do NOT manually set user_obj.info['primaryGroup'].
-    # The test expects the user module's _set_default_group method (called during _ldap_pre_ready)
-    # to automatically pick the correct default group (ou2_group_dn in this case)
+    # Crucially, do NOT manually set user_obj.info['primaryGroup'] to ou2_group_dn.
+    # Instead, if open() might have set a primaryGroup based on ou1_dn,
+    # and we want create() to re-evaluate based on the new position (ou2_dn),
+    # we must clear any pre-existing primaryGroup from self.info.
+    # This signals _set_default_group (when called by _ldap_pre_ready) to determine a new default.
+    if 'primaryGroup' in user_obj.info:
+        del user_obj.info['primaryGroup']
 
     user_obj.create()
     created_user_dn = user_obj.dn
