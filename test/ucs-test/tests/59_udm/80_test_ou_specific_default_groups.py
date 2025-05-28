@@ -15,6 +15,7 @@ import univention.admin.modules as udm_modules
 from univention.admin.uldap import position
 from univention.testing import utils
 from univention.testing.strings import random_string
+from univention.testing.umc import Client
 
 
 @pytest.fixture
@@ -357,3 +358,40 @@ def test_manual_primary_group(udm, primary_group_setup, ldap_base, create_user):
     username = create_user(position_dn=primary_group_setup.ou_dn, primary_group_dn=group_dn)
     _, user_attr = udm.list_objects('users/user', filter=f'username={username}')[0]
     assert user_attr['primaryGroup'] == [group_dn]
+
+
+@pytest.mark.tags('apptest')
+def test_umc_properties_and_user_create(udm, primary_group_setup, ldap_base, create_user, random_username):
+    client = Client.get_test_connection()
+
+    # properties for global default
+    options = [{'objectType': 'users/user'}]
+    res = client.umc_command('udm/properties', options, 'users/user').result[0]
+    primary_group = next(x for x in res if x['id'] == 'primaryGroup')['default']
+    assert primary_group_setup.global_primary_group == primary_group
+
+    # properties ou default
+    options = [{'objectType': 'users/user', 'objectDN': primary_group_setup.ou_dn}]
+    res = client.umc_command('udm/properties', options, 'users/user').result[0]
+    primary_group = next(x for x in res if x['id'] == 'primaryGroup')['default']
+    assert primary_group_setup.ou_primary_group_dn == primary_group
+
+    # manually set primary group
+    username = random_username()
+    primary_group = f'cn=Domain Admins,cn=groups,{ldap_base}'
+    options = [{
+        'object': {
+            'lastname': username,
+            'username': username,
+            'password': 'univention',
+            'primaryGroup': primary_group,
+
+        },
+        'options': {
+            'container': primary_group_setup.ou_dn,
+            'objectType': 'users/user',
+        },
+    }]
+    client.umc_command('udm/add', options, 'users/user')
+    _, user_attr = udm.list_objects('users/user', filter=f'username={username}')[0]
+    assert user_attr['primaryGroup'] == [primary_group]
