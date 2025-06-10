@@ -366,12 +366,12 @@ class Client:
     :param str password: The password of the user.
     :param str language: The preferred language.
     :param float timeout: Set the default timeout in seconds (float) for new connections.
-    :param bool automatic_reauthentication: Automatically re-authenticate and re-do requests if the authentication cookie expires.
+    :param int | bool automatic_reauthentication: Automatically re-authenticate and re-do requests if the authentication cookie expires.
     """
 
     ConnectionType = HTTPSConnection
 
-    def __init__(self, hostname: str | None = None, username: str | None = None, password: str | None = None, language: str | None = None, timeout: float | None = None, automatic_reauthentication: bool = False) -> None:
+    def __init__(self, hostname: str | None = None, username: str | None = None, password: str | None = None, language: str | None = None, timeout: float | None = None, automatic_reauthentication: bool | int = False) -> None:
         self.hostname = hostname or '%(hostname)s.%(domainname)s' % ucr
         self._language = language or locale.getlocale()[0] or ''
         self._headers = {
@@ -385,6 +385,7 @@ class Client:
         self._timeout = timeout
         self._raise_errors = True
         self._automatic_reauthentication = automatic_reauthentication
+        self._max_automatic_reauthentication = automatic_reauthentication if isinstance(automatic_reauthentication, int) else 5
         self.cookies: dict[str, str] = {}
         self.username = username or ''
         self.password = password or ''
@@ -541,13 +542,14 @@ class Client:
         :raises Unauthorized: if the session expired and re-authentication was disabled.
         """
         request = Request(method, path, data, headers)
-        try:
-            return self.send(request)
-        except Unauthorized:
-            if not self._automatic_reauthentication:
-                raise
+        for i in range(self._max_automatic_reauthentication):
+            try:
+                return self.send(request)
+            except Unauthorized:
+                if not self._automatic_reauthentication or i == self._max_automatic_reauthentication:
+                    raise
+
             self.reauthenticate()
-            return self.send(request)
 
     def send(self, request: Request) -> Response:
         """
