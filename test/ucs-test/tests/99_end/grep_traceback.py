@@ -237,10 +237,6 @@ COMMON_EXCEPTIONS = (
     E('pkg_resources.VersionConflict:.*univention-management-console'),
     E('pkg_resources.DistributionNotFound:.*univention-management-console'),
     E(r"FileNotFoundError: \[Errno 2\] No such file or directory: '/tmp/.*", ['/tempfile.py.*in __del__']),
-    E(r"univention.lib.umc.ConnectionError: \('Could not send request.', RemoteDisconnected\('Remote end closed connection without response'\)\)", ['univention-self-service-invitation'], 58380),
-    E("http.client.RemoteDisconnected: Remote end closed connection without response", ['/univention/lib/umc.py'], 58380),
-    E(r"...\[truncated \d+ chars\]...", ['univention-self-service-invitation'], 58380),
-    E("KeyError: 'Cookie'", ['univention-self-service-invitation'], 58380),
 
     # # updater test cases:
     E('EOFError: EOF when reading a line', ['scripts/upgrade.py']),
