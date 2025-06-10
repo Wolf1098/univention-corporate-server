@@ -1908,6 +1908,7 @@ class simpleLdap:
         sizelimit: int = 0,
         serverctrls: list | None = None,
         response: dict | None = None,
+        authz: bool = True,
     ) -> list[Self]:
         """
         Perform a LDAP search and return a list of instances.
@@ -1924,6 +1925,7 @@ class simpleLdap:
         :param sizelimit: retrieve at most `sizelimit` entries for a search. `0` for no limit.
         :param serverctrls: a list of :py:class:`ldap.controls.LDAPControl` instances sent to the server along with the LDAP request.
         :param response: An optional dictionary to receive the server controls of the result.
+        :param authz: ignore authorization checks (**dangerous!**)
         :return: A list of UDM objects.
         """
         if isinstance(lo, univention.uldap.access):
@@ -1939,7 +1941,7 @@ class simpleLdap:
         result = []
         search_base = base or cls.ldap_base
 
-        if not lo._verify_search_base(search_base) or not lo._verify_search_filter(filter_str):
+        if authz and (not lo._verify_search_base(search_base) or not lo._verify_search_filter(filter_str)):
             return result
 
         for dn, attrs in lo.authz_connection.search(filter_str, search_base, scope, attr, unique, required, timeout, sizelimit, serverctrls=serverctrls, response=response):
@@ -1947,7 +1949,10 @@ class simpleLdap:
                 result.append(cls(co, lo, None, dn=dn, superordinate=superordinate, attributes=attrs))
             except univention.admin.uexceptions.base as exc:
                 log.error('lookup() of object %r failed: %s', dn, exc)
-        result = lo.filter_lookup_results(result, {'module': cls.module, 'filter': filter_str, 'base': base or cls.ldap_base, 'scope': scope, 'attr': attr})
+
+        if authz:
+            result = lo.filter_lookup_results(result, {'module': cls.module, 'filter': filter_str, 'base': base or cls.ldap_base, 'scope': scope, 'attr': attr})
+
         if required and not result:
             raise univention.admin.uexceptions.noObject('lookup(base=%r, filter_s=%r)' % (base, filter_e))
         return result
