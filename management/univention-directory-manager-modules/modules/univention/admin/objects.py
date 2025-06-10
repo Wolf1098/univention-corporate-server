@@ -120,8 +120,10 @@ def get_object(lo, dn):
     :param dn: |DN| of the object.
     """
     attr = lo.authz_connection.get(dn, ['*', '+'])
-    for module in univention.admin.modules.objectType(None, lo, dn, attr):
-        return univention.admin.modules.get(module).object(None, lo, None, dn, None, attr)
+    for modname in univention.admin.modules.objectType(None, lo, dn, attr):
+        module = univention.admin.modules.get(modname)
+        if module:
+            return module.object(None, lo, None, dn, None, attr)
 
 
 def open(object):
