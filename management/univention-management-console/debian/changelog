@@ -1,3 +1,9 @@
+univention-management-console (14.2.1) unstable; urgency=medium
+
+  * Bug #12345: allow reading UMC policies from Guardian
+
+ -- Florian Best <best@univention.de>  Thu, 26 Jun 2025 22:43:45 +0200
+
 univention-management-console (14.2.0) unstable; urgency=medium
 
   [ Ivan Barbecho Delgado ]
