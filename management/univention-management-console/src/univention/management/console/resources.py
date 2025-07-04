@@ -745,6 +745,10 @@ class Command(Resource):
         # headers['X-UMC-Flavor'] = None
         # X-UMC-IP=self.get_ip_address() ?
         headers['Authorization'] = 'basic ' + base64.b64encode(('%s:%s' % (session.user.username, session.get_umc_password())).encode('ISO8859-1')).decode('ASCII')
+        if session.user.roles is not None:
+            headers['X-Nubus-Roles'] = json.dumps(session.user.roles)
+        if session.user.external_account:
+            headers['X-Nubus-External-Account'] = json.dumps(True)
         headers['X-UMC-Method'] = methodname
         headers['X-UMC-Command'] = umcp_command.upper()
         headers['X-UMC-Request-ID'] = self._request_id
@@ -1030,6 +1034,9 @@ class SetUserPreferences(UserPreferences):
         "preferences": DictSanitizer({}, required=True),
     }))
     async def post(self):
+        if self.current_user.user.external_account:
+            # no preferences for external accounts
+            return
         lo = self.current_user.get_user_ldap_connection()
         # eliminate double entries
         preferences = self._get_user_preferences(lo)

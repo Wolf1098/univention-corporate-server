@@ -32,18 +32,59 @@ from univention.management.console.session import Session
 from univention.management.console.session_db import DBDisabledException, get_session
 from univention.management.console.shared_memory import shared_memory
 
+from .ldap import get_machine_connection
+
+
+def create_external_account(uuid, roles, preferred_username=None):
+    from univention.admin import modules
+    from univention.admin.uexceptions import noObject
+
+    lo, position = get_machine_connection(write=True)
+    ldap_base = ucr['ldap/base']
+    modules.update()
+    exts = modules.get('users/external_account')
+    modules.init(lo, position, exts)
+    try:
+        ext = exts.lookup(None, lo, f'univentionObjectIdentifier={uuid}', base=f'cn={uuid},cn=external_accounts,cn=univention,{ldap_base}')
+        ext = ext[0]
+        ext.open()
+        ext['guardianRoles'] = roles
+        ext.modify()
+    except noObject:
+        position.setDn(f'cn=external_accounts,cn=univention,{ldap_base}')
+        ext = exts.object(None, lo, position)
+        ext.open()
+        ext['uuid'] = uuid
+        ext['guardianRoles'] = roles
+        if preferred_username:
+            ext['preferred_username'] = preferred_username
+        ext.create()
+    CORE.process(f'external account {ext.dn} with roles {roles}')
+
 
 class OIDCUser:
     """OIDC tokens of the authenticated user."""
 
-    __slots__ = ('access_token', 'claims', 'id_token', 'refresh_token', 'session_refresh_future', 'username')
+    __slots__ = ('access_token', 'claims', 'external_account', 'id_token', 'nubus_id', 'refresh_token', 'roles', 'session_refresh_future', 'username')
 
     def __init__(self, id_token, access_token, refresh_token, claims):
         self.id_token = id_token
         self.access_token = access_token
         self.refresh_token = refresh_token
         self.claims = claims
-        self.username = claims['uid']
+        if claims.get('nubus_external_account', False):
+            self.nubus_id = claims['nubus_id']
+            self.username = claims.get('preferred_username') or self.nubus_id
+            self.roles = claims.get('nubus_roles')
+            self.external_account = True
+            # FIXME: somehow create an account, or a blocklist entry
+            create_external_account(self.nubus_id, self.roles, preferred_username=claims.get('preferred_username'))
+            CORE.process(f'OIDC login external user {self.nubus_id} with roles {self.roles}')
+        else:
+            self.nubus_id = None
+            self.username = claims['uid']
+            self.roles = None
+            self.external_account = False
         self.session_refresh_future = None
 
     @property
@@ -144,16 +185,19 @@ class OIDCResource(OAuth2Mixin, Resource):
         # important: must be called before the auth, to preserve session id in case of re-auth and that a user cannot choose his own session ID by providing a cookie
         sessionid = self.create_sessionid()
 
-        # TODO: drop in the future to gain performance
-        result = await self.current_user.authenticate({
-            'locale': self.locale.code,
-            'username': oidc.username,
-            'password': oidc.access_token,
-            'auth_type': 'OIDC',
-        })
-        if not self.current_user.user.authenticated:
-            CORE.error('SECURITY WARNING: PAM OIDC Authentication failed while JWT verification succeeded!')
-            raise UMC_Error(result.message, result.status, result.result)
+        if not oidc.external_account:
+            # TODO: drop in the future to gain performance
+            result = await self.current_user.authenticate({
+                'locale': self.locale.code,
+                'username': oidc.username,
+                'password': oidc.access_token,
+                'auth_type': 'OIDC',
+            })
+            if not self.current_user.user.authenticated:
+                CORE.error('SECURITY WARNING: PAM OIDC Authentication failed while JWT verification succeeded!')
+                raise UMC_Error(result.message, result.status, result.result)
+        else:
+            self.current_user.set_credentials(oidc.username, oidc.access_token, 'OIDC', object_id=oidc.nubus_id, roles=oidc.roles, external_account=oidc.external_account)
 
         # as an alternative to PAM we could just set the user as authenticated because jwt.decode() already ensured this.
         # but we keep the behavior for now because this is what happened prior to the UMC-Web-Server and UMC-Sever unification
