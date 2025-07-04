@@ -13,6 +13,7 @@ from html.parser import HTMLParser
 from typing import TYPE_CHECKING, Any
 
 import requests
+from bs4 import BeautifulSoup
 
 from univention.config_registry import ConfigRegistry
 from univention.lib.umc import Client as _Client
@@ -128,3 +129,41 @@ class ClientSaml(Client):
         relay_state = get_html_tag_value(saml_idp_login_ans.text, 'input', ('name', 'RelayState'), 'value')
         print('Post SAML msg to: %s' % sp_login_url)
         self.__samlSession.post(sp_login_url, data={'SAMLResponse': saml_msg, 'RelayState': relay_state}).raise_for_status()
+
+
+class ClientOIDC(Client):
+
+    def authenticate(self, username: str, password: str, kc_idp_hint: str | None = None) -> None:
+        self.session = requests.Session()
+        login_url = "https://%s/univention/oidc/" % self.hostname
+        print('GET OIDC login form at: %s' % login_url)
+        # kerberos redirect
+        res = self.session.get(login_url)
+        kerberos_redirect_url = self.get_kerberos_redirect(res.text)
+        # external idp
+        if kc_idp_hint:
+            res = self.session.get(kerberos_redirect_url, params={'kc_idp_hint': kc_idp_hint})
+            # kerberos redirect
+            kerberos_redirect_url = self.get_kerberos_redirect(res.text)
+        res = self.session.get(kerberos_redirect_url)
+        login_link = self.get_login_link(res)
+        # login
+        params = {'username': username, 'password': password}
+        res = self.session.post(login_link, data=params)
+        assert res.status_code == 200, res.text
+        assert 'authentication has failed' not in res.text, res.text
+        self.cookies.update(self.session.cookies.items())
+
+    def get_kerberos_redirect(self, text):
+        try:
+            soup = BeautifulSoup(text, 'lxml')
+            title = soup.find('title')
+            if title and 'Kerberos' in title.text:
+                return soup.find('body').findChild('form').attrs.get('action')
+        except AttributeError:
+            return None
+
+    def get_login_link(self, req):
+        soup = BeautifulSoup(req.text, features='lxml')
+        login_link = soup.select_one('form[id="kc-form-login"]')['action']
+        return login_link
