@@ -7076,6 +7076,98 @@ class GuardianRole(simple):
     )
 
 
+class AuthorizationPrivileges(UDM_Objects):
+    label = '%(name)s'
+    udm_modules = ('authorization/privilege')
+
+
+class AuthorizationActions(select):
+    choices = [
+        ('*', _('Everything')),
+        ('search', _('Search')),
+        ('read', _('Read')),
+        ('create', _('Create')),
+        ('modify', _('Modify')),
+        ('rename', _('Rename')),
+        ('remove', _('Remove')),
+        ('move', _('Move')),
+        ('report-create', _('Create report')),
+    ]
+
+
+class AuthorizationRestriction(string):
+    size = 'OneThird'
+
+
+class AuthorizationPermission(select):
+    size = 'TwoThirds'
+    choices = [
+        ('read', _('Read')),
+        ('search', _('Search')),
+        ('write', _('Write')),
+        ('readonly', _('Readonly')),
+        ('writeonly', _('Writeonly')),
+        ('none', _('None')),
+    ]
+
+
+class AuthorizationProperty(combobox):
+    size = 'TwoThirds'
+    depends = 'objecttype'
+    choices = [
+        ('*', _('All')),
+    ]
+
+    @classmethod
+    def get_choices(cls, lo, options):
+        mods = list(univention.admin.modules.modules)
+        if cls.depends in options.get('dependencies', {}):  # pragma: no cover
+            mods = [options['dependencies'][cls.depends]]
+
+        choices = [
+            (pname, prop.short_description)
+            for mod in mods
+            for pname, prop in univention.admin.modules.get(mod).property_descriptions.items()
+        ]
+        return cls.choices + cls.sort_choices(choices)
+
+
+class AuthorizationProperties(complex):
+    delimiter = ' '
+    depends = 'objecttype'
+    subsyntaxes = ((_('UDM Property'), AuthorizationProperty), (_('Permission'), AuthorizationPermission), (_('Restriction'), AuthorizationRestriction))
+    subsyntax_names = ('property', 'permission', 'restriction')
+
+
+class AuthorizationScope(select):
+    size = 'Half'
+    empty_value = True
+    choices = [
+        ('base', _('Base')),
+        # ('base+one', _('Base + Onelevel')),
+        ('one', _('Onelevel')),
+        ('subtree', _('Subtree')),
+    ]
+
+
+class AuthorizationPositions(UDM_Objects):
+    udm_modules = ('container/dc', 'container/ou', 'container/cn')
+    empty_value = True
+    size = 'OneAndAHalf'
+    label = 'dn'
+    # TODO: make a widget for tree selection
+    choices = [
+        ('cn={context}', _('Get from context')),
+    ]
+
+
+class AuthorizationScopePosition(complex):
+    delimiter = ' '
+    size = 'Two'
+    subsyntaxes = ((_('Scope'), AuthorizationScope), (_('Position'), AuthorizationPositions))
+    subsyntax_names = ('scope', 'position')
+
+
 class _EscapedDict(dict):
     """A dictionary wrapper which returns values as LDAP filter escaped values"""
 
