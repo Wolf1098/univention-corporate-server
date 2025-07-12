@@ -39,6 +39,7 @@ property_descriptions = {
         include_in_default_search=True,
         required=True,
         identifies=True,
+        ldap_attribute='cn',
     ),
     'printeruri': univention.admin.property(
         short_description=_('Printer URI'),
@@ -47,6 +48,7 @@ property_descriptions = {
         multivalue=True,
         include_in_default_search=True,
         dontsearch=True,
+        ldap_attribute='printerURI',
     ),
 }
 
@@ -61,8 +63,7 @@ layout = [
 
 
 mapping = univention.admin.mapping.mapping()
-mapping.register('name', 'cn', None, univention.admin.mapping.ListToString)
-mapping.register('printeruri', 'printerURI')
+mapping.from_properties(property_descriptions)
 # fmt: on
 
 

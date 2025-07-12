@@ -50,6 +50,7 @@ property_descriptions = {
         required=True,
         may_change=False,
         identifies=True,
+        ldap_attribute='cn',
     ),
     'expires': univention.admin.property(
         short_description=_('Expiry date'),
@@ -57,6 +58,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         required=True,
         may_change=False,
+        ldap_attribute='univentionLicenseEndDate',
+        encoding='ASCII',
     ),
     'module': univention.admin.property(
         short_description=_('Module'),
@@ -65,6 +68,8 @@ property_descriptions = {
         options=['Version 1'],
         required=True,
         may_change=False,
+        ldap_attribute='univentionLicenseModule',
+        encoding='ASCII',
     ),
     'base': univention.admin.property(
         short_description=_('Base DN'),
@@ -73,6 +78,8 @@ property_descriptions = {
         include_in_default_search=True,
         required=True,
         may_change=False,
+        ldap_attribute='univentionLicenseBaseDN',
+        encoding='ASCII',
     ),
     'signature': univention.admin.property(
         short_description=_('Signature'),
@@ -80,6 +87,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         required=True,
         may_change=False,
+        ldap_attribute='univentionLicenseSignature',
+        encoding='ASCII',
     ),
     'accounts': univention.admin.property(
         short_description=_('Max. user accounts'),
@@ -87,6 +96,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         options=['Version 1'],
         may_change=False,
+        ldap_attribute='univentionLicenseAccounts',
+        encoding='ASCII',
     ),
     'clients': univention.admin.property(
         short_description=_('Max. clients'),
@@ -94,6 +105,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         options=['Version 1'],
         may_change=False,
+        ldap_attribute='univentionLicenseClients',
+        encoding='ASCII',
     ),
     'groupwareaccounts': univention.admin.property(
         short_description=_('Max. groupware accounts'),
@@ -101,6 +114,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         options=['Version 1'],
         may_change=False,
+        ldap_attribute='univentionLicenseGroupwareAccounts',
+        encoding='ASCII',
     ),
     'desktops': univention.admin.property(
         short_description=_('Max. desktops'),
@@ -108,6 +123,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         options=['Version 1'],
         may_change=False,
+        ldap_attribute='univentionLicenseuniventionDesktops',
+        encoding='ASCII',
     ),
     'productTypes': univention.admin.property(
         short_description=_('Valid product types'),
@@ -116,6 +133,8 @@ property_descriptions = {
         multivalue=True,
         options=['Version 1'],
         may_change=False,
+        ldap_attribute='univentionLicenseType',
+        encoding='ASCII',
     ),
     'oemProductTypes': univention.admin.property(
         short_description=_('Valid OEM product types'),
@@ -123,6 +142,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         multivalue=True,
         may_change=False,
+        ldap_attribute='univentionLicenseOEMProduct',
+        encoding='ASCII',
     ),
     'product': univention.admin.property(
         short_description=_('Product type'),
@@ -130,6 +151,9 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         multivalue=True,
         may_change=False,
+        ldap_attribute='univentionLicenseProduct',
+        unmap=ListToString,
+        encoding='ASCII',
     ),
     'keyID': univention.admin.property(
         short_description=_('Key ID'),
@@ -137,6 +161,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         options=['Version 2'],
         may_change=False,
+        ldap_attribute='univentionLicenseKeyID',
+        encoding='ASCII',
     ),
     'servers': univention.admin.property(
         short_description=_('Servers'),
@@ -144,6 +170,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         options=['Version 2'],
         may_change=False,
+        ldap_attribute='univentionLicenseServers',
+        encoding='ASCII',
     ),
     'support': univention.admin.property(
         short_description=_('Servers with standard support'),
@@ -151,6 +179,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         options=['Version 2'],
         may_change=False,
+        ldap_attribute='univentionLicenseSupport',
+        encoding='ASCII',
     ),
     'premiumsupport': univention.admin.property(
         short_description=_('Premium Support'),
@@ -158,6 +188,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         options=['Version 2'],
         may_change=False,
+        ldap_attribute='univentionLicensePremiumSupport',
+        encoding='ASCII',
     ),
     'managedclients': univention.admin.property(
         short_description=_('Managed Clients'),
@@ -165,6 +197,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         options=['Version 2'],
         may_change=False,
+        ldap_attribute='univentionLicenseManagedClients',
+        encoding='ASCII',
     ),
     'users': univention.admin.property(
         short_description=_('Users'),
@@ -172,6 +206,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         options=['Version 2'],
         may_change=False,
+        ldap_attribute='univentionLicenseUsers',
+        encoding='ASCII',
     ),
     'virtualdesktopusers': univention.admin.property(
         short_description=_('DVS users'),
@@ -179,6 +215,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         options=['Version 2'],
         may_change=False,
+        ldap_attribute='univentionLicenseVirtualDesktopUsers',
+        encoding='ASCII',
     ),
     'virtualdesktopclients': univention.admin.property(
         short_description=_('DVS clients'),
@@ -186,6 +224,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         options=['Version 2'],
         may_change=False,
+        ldap_attribute='univentionLicenseVirtualDesktopClients',
+        encoding='ASCII',
     ),
     'corporateclients': univention.admin.property(
         short_description=_('Corporate clients'),
@@ -193,6 +233,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         options=['Version 2'],
         may_change=False,
+        ldap_attribute='univentionLicenseCorporateClients',
+        encoding='ASCII',
     ),
     'version': univention.admin.property(
         short_description=_('Version'),
@@ -200,6 +242,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         options=['Version 2'],
         may_change=False,
+        ldap_attribute='univentionLicenseVersion',
+        encoding='ASCII',
     ),
 
 }
@@ -231,28 +275,7 @@ layout = [
 ]
 
 mapping = univention.admin.mapping.mapping()
-mapping.register('name', 'cn', None, univention.admin.mapping.ListToString)
-mapping.register('expires', 'univentionLicenseEndDate', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('module', 'univentionLicenseModule', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('base', 'univentionLicenseBaseDN', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('signature', 'univentionLicenseSignature', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('accounts', 'univentionLicenseAccounts', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('groupwareaccounts', 'univentionLicenseGroupwareAccounts', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('clients', 'univentionLicenseClients', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('desktops', 'univentionLicenseuniventionDesktops', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('productTypes', 'univentionLicenseType', encoding='ASCII')
-mapping.register('oemProductTypes', 'univentionLicenseOEMProduct', encoding='ASCII')
-mapping.register('product', 'univentionLicenseProduct', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('keyID', 'univentionLicenseKeyID', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('servers', 'univentionLicenseServers', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('support', 'univentionLicenseSupport', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('premiumsupport', 'univentionLicensePremiumSupport', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('managedclients', 'univentionLicenseManagedClients', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('users', 'univentionLicenseUsers', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('virtualdesktopusers', 'univentionLicenseVirtualDesktopUsers', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('virtualdesktopclients', 'univentionLicenseVirtualDesktopClients', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('corporateclients', 'univentionLicenseCorporateClients', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('version', 'univentionLicenseVersion', None, univention.admin.mapping.ListToString, encoding='ASCII')
+mapping.from_properties(property_descriptions)
 # fmt: on
 
 

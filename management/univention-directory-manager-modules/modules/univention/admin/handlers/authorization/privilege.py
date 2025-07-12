@@ -51,18 +51,21 @@ property_descriptions = {
         required=True,
         may_change=False,
         identifies=True,
+        ldap_attribute='cn',
     ),
     'description': univention.admin.property(
         short_description=_('Description'),
         long_description='',
         syntax=univention.admin.syntax.string,
         size='Two',
+        ldap_attribute='description',
     ),
     'objecttype': univention.admin.property(
         short_description=_('Object Type'),
         long_description=_('Grant access to object type'),
         syntax=univention.admin.syntax.univentionAdminModules,
         required=True,
+        ldap_attribute='univentionAuthorizationObjectType',
     ),
     'actions': univention.admin.property(
         short_description=_('Action permissions'),
@@ -70,22 +73,30 @@ property_descriptions = {
         syntax=univention.admin.syntax.AuthorizationActions,
         multivalue=True,
         required=True,
+        ldap_attribute='univentionAuthorizationGrantsAction',
     ),
     'properties': univention.admin.property(
         short_description=_('Property permissions'),
         long_description=_('Grant specified permissions to properties under the given restrictions'),
         syntax=univention.admin.syntax.AuthorizationProperties,
         multivalue=True,
+        ldap_attribute='univentionAuthorizationGrantsProperties',
+        map=mapProperties,
+        unmap=unmapProperties,
     ),
     'position': univention.admin.property(
         short_description=_('Position with scope'),
         long_description='',
         syntax=univention.admin.syntax.AuthorizationScopePosition,
+        ldap_attribute='univentionAuthorizationPosition',
+        map=mapPosition,
+        unmap=unmapPosition,
     ),
     'condition': univention.admin.property(
         short_description=_('Condition'),
         long_description=_('Further restriction where this policy applies to'),
         syntax=univention.admin.syntax.string,
+        ldap_attribute='univentionAuthorizationCondition',
     ),
 }
 
@@ -174,13 +185,7 @@ def unmapPosition(old: Sequence[bytes], encoding: Sequence[str] = ()) -> list[li
 
 # fmt: off
 mapping = univention.admin.mapping.mapping()
-mapping.register('name', 'cn', None, univention.admin.mapping.ListToString)
-mapping.register('description', 'description', None, univention.admin.mapping.ListToString)
-mapping.register('objecttype', 'univentionAuthorizationObjectType', None, univention.admin.mapping.ListToString)
-mapping.register('actions', 'univentionAuthorizationGrantsAction')
-mapping.register('properties', 'univentionAuthorizationGrantsProperties', mapProperties, unmapProperties)
-mapping.register('position', 'univentionAuthorizationPosition', mapPosition, unmapPosition)
-mapping.register('condition', 'univentionAuthorizationCondition', None, univention.admin.mapping.ListToString)
+mapping.from_properties(property_descriptions)
 # fmt: on
 
 

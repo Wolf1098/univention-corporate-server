@@ -39,6 +39,7 @@ property_descriptions = {
         include_in_default_search=True,
         required=True,
         identifies=True,
+        ldap_attribute='cn',
     ),
     'usernames': univention.admin.property(
         short_description=_('Prohibited user name'),
@@ -46,6 +47,7 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         multivalue=True,
         include_in_default_search=True,
+        ldap_attribute='prohibitedUsername',
     ),
 }
 
@@ -59,8 +61,7 @@ layout = [
 ]
 
 mapping = univention.admin.mapping.mapping()
-mapping.register('name', 'cn', None, univention.admin.mapping.ListToString)
-mapping.register('usernames', 'prohibitedUsername', None, None)
+mapping.from_properties(property_descriptions)
 # fmt: on
 
 

@@ -64,12 +64,14 @@ property_descriptions = dict({
         required=True,
         may_change=False,
         identifies=True,
+        ldap_attribute='cn',
     ),
     'allow': univention.admin.property(
         short_description=_('List of allowed UMC operation sets'),
         long_description='',
         syntax=udm_syntax.UMC_OperationSet,
         multivalue=True,
+        ldap_attribute='umcPolicyGrantedOperationSet',
     ),
 }, **dict([
     requiredObjectClassesProperty(),
@@ -90,8 +92,6 @@ layout = [
 ]
 
 mapping = udm_mapping.mapping()
-mapping.register('name', 'cn', None, udm_mapping.ListToString)
-mapping.register('allow', 'umcPolicyGrantedOperationSet')
 register_policy_mapping(mapping)
 # fmt: on
 

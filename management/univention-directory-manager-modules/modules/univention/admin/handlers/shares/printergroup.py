@@ -41,6 +41,7 @@ property_descriptions = {
         required=True,
         may_change=False,
         identifies=True,
+        ldap_attribute='cn',
     ),
     'spoolHost': univention.admin.property(
         short_description=_('Print server'),
@@ -48,6 +49,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.ServicePrint_FQDN,
         multivalue=True,
         required=True,
+        ldap_attribute='univentionPrinterSpoolHost',
+        encoding='ASCII',
     ),
     'groupMember': univention.admin.property(
         short_description=_('Group members'),
@@ -55,12 +58,14 @@ property_descriptions = {
         syntax=univention.admin.syntax.PrinterNames,
         multivalue=True,
         required=True,
+        ldap_attribute='univentionPrinterGroupMember',
     ),
     'sambaName': univention.admin.property(
         short_description=_('Windows name'),
         long_description='',
         syntax=univention.admin.syntax.string,
         unique=True,
+        ldap_attribute='univentionPrinterSambaName',
     ),
 }
 
@@ -75,10 +80,7 @@ layout = [
 
 
 mapping = univention.admin.mapping.mapping()
-mapping.register('name', 'cn', None, univention.admin.mapping.ListToString)
-mapping.register('spoolHost', 'univentionPrinterSpoolHost', encoding='ASCII')
-mapping.register('sambaName', 'univentionPrinterSambaName', None, univention.admin.mapping.ListToString)
-mapping.register('groupMember', 'univentionPrinterGroupMember')
+mapping.from_properties(property_descriptions)
 # fmt: on
 
 

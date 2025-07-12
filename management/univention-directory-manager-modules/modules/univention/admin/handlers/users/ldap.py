@@ -56,6 +56,7 @@ property_descriptions = dict({
         required=True,
         identifies=True,
         readonly_when_synced=True,
+        ldap_attribute='uid',
     ),
     'lastname': univention.admin.property(
         short_description=_('Last name'),
@@ -66,6 +67,7 @@ property_descriptions = dict({
         default='<username><:umlauts,strip>',
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='sn',
     ),
     'name': univention.admin.property(
         short_description=_('Name'),
@@ -76,6 +78,7 @@ property_descriptions = dict({
         default='<username><:umlauts,strip>',
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='cn',
     ),
     'description': univention.admin.property(
         short_description=_('Description'),
@@ -84,6 +87,7 @@ property_descriptions = dict({
         include_in_default_search=True,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='description',
     ),
     'disabled': univention.admin.property(
         short_description=_('Account deactivation'),
@@ -100,6 +104,8 @@ property_descriptions = dict({
         required=True,
         dontsearch=True,
         readonly_when_synced=True,
+        ldap_attribute='userPassword',
+        map=univention.admin.mapping.dontMap(),
     ),
     'locked': univention.admin.property(
         short_description=_('Reset lockout'),
@@ -159,11 +165,7 @@ def isLDAPLocked(oldattr: univention.admin.handlers._Attributes) -> bool:
 
 # fmt: off
 mapping = univention.admin.mapping.mapping()
-mapping.register('username', 'uid', None, univention.admin.mapping.ListToString)
-mapping.register('lastname', 'sn', None, univention.admin.mapping.ListToString)
-mapping.register('name', 'cn', None, univention.admin.mapping.ListToString)
-mapping.register('description', 'description', None, univention.admin.mapping.ListToString)
-mapping.register('password', 'userPassword', univention.admin.mapping.dontMap(), univention.admin.mapping.ListToString)
+mapping.from_properties(property_descriptions)
 mapping.registerUnmapping('locked', unmapLocked)
 register_pki_mapping(mapping)
 register_role_mapping(mapping)

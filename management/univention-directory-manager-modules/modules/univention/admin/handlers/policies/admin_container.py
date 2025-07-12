@@ -56,12 +56,14 @@ property_descriptions = dict({
         required=True,
         may_change=False,
         identifies=True,
+        ldap_attribute='cn',
     ),
     'listModules': univention.admin.property(
         short_description=_('Available Univention Directory Manager modules'),
         long_description='',
         syntax=univention.admin.syntax.univentionAdminModules,
         multivalue=True,
+        ldap_attribute='univentionAdminListModules',
     ),
 }, **dict([
     requiredObjectClassesProperty(),
@@ -82,8 +84,7 @@ layout = [
 ]
 
 mapping = univention.admin.mapping.mapping()
-mapping.register('name', 'cn', None, univention.admin.mapping.ListToString)
-mapping.register('listModules', 'univentionAdminListModules')
+mapping.from_properties(property_descriptions)
 register_policy_mapping(mapping)
 # fmt: on
 

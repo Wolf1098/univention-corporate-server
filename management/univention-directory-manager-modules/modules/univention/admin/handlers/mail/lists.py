@@ -36,12 +36,14 @@ property_descriptions = {
         include_in_default_search=True,
         required=True,
         identifies=True,
+        ldap_attribute='cn',
     ),
     'description': univention.admin.property(
         short_description=_('Description'),
         long_description='',
         syntax=univention.admin.syntax.string,
         include_in_default_search=True,
+        ldap_attribute='description',
     ),
     'members': univention.admin.property(
         short_description=_('Members'),
@@ -49,12 +51,14 @@ property_descriptions = {
         syntax=univention.admin.syntax.emailAddress,
         multivalue=True,
         dontsearch=True,
+        ldap_attribute='univentionMailMember',
     ),
     'mailAddress': univention.admin.property(
         short_description=_('Mail address'),
         long_description='',
         syntax=univention.admin.syntax.emailAddressValidDomain,
         include_in_default_search=True,
+        ldap_attribute='mailPrimaryAddress',
     ),
     'allowedEmailUsers': univention.admin.property(
         short_description=_('Users that are allowed to send e-mails to the list'),
@@ -62,6 +66,7 @@ property_descriptions = {
         syntax=univention.admin.syntax.UserDN,
         multivalue=True,
         dontsearch=True,
+        ldap_attribute='univentionAllowedEmailUsers',
     ),
     'allowedEmailGroups': univention.admin.property(
         short_description=_('Groups that are allowed to send e-mails to the list'),
@@ -69,6 +74,7 @@ property_descriptions = {
         syntax=univention.admin.syntax.GroupDN,
         multivalue=True,
         dontsearch=True,
+        ldap_attribute='univentionAllowedEmailGroups',
     ),
 }
 
@@ -89,12 +95,7 @@ layout = [
 ]
 
 mapping = univention.admin.mapping.mapping()
-mapping.register('name', 'cn', None, univention.admin.mapping.ListToString)
-mapping.register('description', 'description', None, univention.admin.mapping.ListToString)
-mapping.register('members', 'univentionMailMember')
-mapping.register('mailAddress', 'mailPrimaryAddress', None, univention.admin.mapping.ListToString)
-mapping.register('allowedEmailUsers', 'univentionAllowedEmailUsers')
-mapping.register('allowedEmailGroups', 'univentionAllowedEmailGroups')
+mapping.from_properties(property_descriptions)
 # fmt: on
 
 

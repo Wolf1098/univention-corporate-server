@@ -42,6 +42,10 @@ property_descriptions = {
         include_in_default_search=True,
         required=True,
         identifies=True,
+        ldap_attribute='relativeDomainName',
+        map=mapName,
+        unmap=unmapName,
+        encoding='ASCII',
     ),
     'location': univention.admin.property(
         short_description=_('Location'),
@@ -49,6 +53,10 @@ property_descriptions = {
         syntax=univention.admin.syntax.dnsSRVLocation,
         multivalue=True,
         required=True,
+        ldap_attribute='sRVRecord',
+        map=mapLocation,
+        unmap=unmapLocation,
+        encoding='ASCII',
     ),
     'zonettl': univention.admin.property(
         short_description=_('Time to live'),
@@ -56,6 +64,9 @@ property_descriptions = {
         syntax=univention.admin.syntax.UNIX_TimeInterval,
         default=(('3', 'hours'), []),
         dontsearch=True,
+        ldap_attribute='dNSTTL',
+        map=mapUNIX_TimeInterval,
+        unmap=unmapUNIX_TimeInterval,
     ),
 }
 layout = [
@@ -101,9 +112,7 @@ def mapLocation(old: list[list[str]], encoding: univention.admin.handlers._Encod
 
 # fmt: off
 mapping = univention.admin.mapping.mapping()
-mapping.register('name', 'relativeDomainName', mapName, unmapName, encoding='ASCII')
-mapping.register('location', 'sRVRecord', mapLocation, unmapLocation, encoding='ASCII')
-mapping.register('zonettl', 'dNSTTL', univention.admin.mapping.mapUNIX_TimeInterval, univention.admin.mapping.unmapUNIX_TimeInterval)
+mapping.from_properties(property_descriptions)
 # fmt: on
 
 

@@ -40,6 +40,7 @@ property_descriptions = {
         required=True,
         may_change=False,
         identifies=True,
+        ldap_attribute='cn',
     ),
     'locktime': univention.admin.property(
         short_description=_('Lock Time'),
@@ -47,6 +48,7 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         required=True,
         may_change=False,
+        ldap_attribute='lockTime',
     ),
 }
 
@@ -59,8 +61,7 @@ layout = [
 ]
 
 mapping = univention.admin.mapping.mapping()
-mapping.register('name', 'cn', None, univention.admin.mapping.ListToString)
-mapping.register('locktime', 'lockTime', None, univention.admin.mapping.ListToString)
+mapping.from_properties(property_descriptions)
 # fmt: on
 
 

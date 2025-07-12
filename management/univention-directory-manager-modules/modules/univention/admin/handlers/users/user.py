@@ -85,6 +85,7 @@ property_descriptions = dict({
         required=True,
         identifies=True,
         readonly_when_synced=True,
+        ldap_attribute='uid',
     ),
     'uidNumber': univention.admin.property(
         short_description=_('User ID'),
@@ -92,6 +93,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.integer,
         may_change=False,
         dontsearch=True,
+        ldap_attribute='uidNumber',
     ),
     'gidNumber': univention.admin.property(
         short_description=_('Group ID of the primary group'),
@@ -101,6 +103,7 @@ property_descriptions = dict({
         editable=False,
         dontsearch=True,
         readonly_when_synced=True,
+        ldap_attribute='gidNumber',
     ),
     'firstname': univention.admin.property(
         short_description=_('First name'),
@@ -108,6 +111,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.TwoThirdsString,
         include_in_default_search=True,
         readonly_when_synced=True,
+        ldap_attribute='givenName',
     ),
     'lastname': univention.admin.property(
         short_description=_('Last name'),
@@ -116,6 +120,7 @@ property_descriptions = dict({
         include_in_default_search=True,
         required=True,
         readonly_when_synced=True,
+        ldap_attribute='sn',
     ),
     'gecos': univention.admin.property(
         short_description=_('GECOS'),
@@ -123,6 +128,8 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.IA5string,
         default='<firstname> <lastname><:umlauts,strip>',
         dontsearch=True,
+        ldap_attribute='gecos',
+        encoding='ASCII',
     ),
     'displayName': univention.admin.property(
         short_description=_('Display name'),
@@ -130,22 +137,26 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.string,
         default='<firstname> <lastname><:strip>',
         readonly_when_synced=True,
+        ldap_attribute='displayName',
     ),
     'title': univention.admin.property(
         short_description=_('Title'),
         long_description='',
         syntax=univention.admin.syntax.OneThirdString,
         readonly_when_synced=True,
+        ldap_attribute='title',
     ),
     'initials': univention.admin.property(
         short_description=_('Initials'),
         long_description='',
         syntax=univention.admin.syntax.string6,
+        ldap_attribute='initials',
     ),
     'preferredDeliveryMethod': univention.admin.property(
         short_description=_('Preferred delivery method'),
         long_description='',
         syntax=univention.admin.syntax.string,
+        ldap_attribute='preferredDeliveryMethod',
     ),
     'sambaPrivileges': univention.admin.property(
         short_description=_('Samba privilege'),
@@ -154,6 +165,8 @@ property_descriptions = dict({
         multivalue=True,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='univentionSambaPrivilegeList',
+        encoding='ASCII',
     ),
     'description': univention.admin.property(
         short_description=_('Description'),
@@ -162,6 +175,7 @@ property_descriptions = dict({
         include_in_default_search=True,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='description',
     ),
     'organisation': univention.admin.property(
         short_description=_('Organisation'),
@@ -169,6 +183,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.string64,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='o',
     ),
     'userexpiry': univention.admin.property(
         short_description=_('Account expiry date'),
@@ -198,6 +213,7 @@ property_descriptions = dict({
         long_description=_('Preferred written or spoken language for the person.'),
         syntax=univention.admin.syntax.string,
         copyable=True,
+        ldap_attribute='preferredLanguage',
     ),
     'disabled': univention.admin.property(
         short_description=_('Account is deactivated'),
@@ -214,6 +230,10 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.ActivationDateTimeTimezone,
         dontsearch=True,
         default=([None, None, str(tzlocal.get_localzone())], []),
+        ldap_attribute='krb5ValidStart',
+        map=mapDateTimeTimezoneTupleToUTCDateTimeString,
+        unmap=unmapUTCDateTimeToLocaltime,
+        encoding='ASCII',
     ),
     'locked': univention.admin.property(  # This property only serves two purposes: 1) filtering 2) artificial simulation of lockout
         short_description=_('Locked state of account'),
@@ -230,6 +250,9 @@ property_descriptions = dict({
         may_change=False,  # caution! this gets overwritten by some scripts
         editable=False,  # caution! this gets overwritten by some scripts
         dontsearch=True,
+        ldap_attribute='sambaBadPasswordTime',
+        map=mapWindowsFiletime,
+        unmap=unmapWindowsFiletime,
     ),
     'unlock': univention.admin.property(  # Just a trigger to reset self['locked']
         short_description=_('Unlock account'),
@@ -255,6 +278,8 @@ property_descriptions = dict({
         required=True,
         dontsearch=True,
         readonly_when_synced=True,
+        ldap_attribute='userPassword',
+        map=univention.admin.mapping.dontMap(),
     ),
     'street': univention.admin.property(
         short_description=_('Street'),
@@ -262,12 +287,15 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.string,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='street',
     ),
     'e-mail': univention.admin.property(
         short_description=_('E-mail address'),
         long_description=_('This e-mail address serves only as contact information. This address has no effect on the UCS mail stack and is not related to a local mailbox.'),
         syntax=univention.admin.syntax.emailAddress,
         multivalue=True,
+        ldap_attribute='mail',
+        encoding='ASCII',
     ),
     'postcode': univention.admin.property(
         short_description=_('Postal code'),
@@ -275,6 +303,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.OneThirdString,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='postalCode',
     ),
     'postOfficeBox': univention.admin.property(
         short_description=_('Post office box'),
@@ -282,6 +311,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.string,
         multivalue=True,
         copyable=True,
+        ldap_attribute='postOfficeBox',
     ),
     'city': univention.admin.property(
         short_description=_('City'),
@@ -289,6 +319,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.TwoThirdsString,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='l',
     ),
     'country': univention.admin.property(
         short_description=_('Country'),
@@ -296,6 +327,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.Country,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='c',
     ),
     'state': univention.admin.property(
         short_description=_('State'),
@@ -303,6 +335,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.string,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='st',
     ),
     'phone': univention.admin.property(
         short_description=_('Telephone number'),
@@ -311,11 +344,13 @@ property_descriptions = dict({
         multivalue=True,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='telephoneNumber',
     ),
     'employeeNumber': univention.admin.property(
         short_description=_('Employee number'),
         long_description='',
         syntax=univention.admin.syntax.string,
+        ldap_attribute='employeeNumber',
     ),
     'roomNumber': univention.admin.property(
         short_description=_('Room number'),
@@ -323,6 +358,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.OneThirdString,
         multivalue=True,
         copyable=True,
+        ldap_attribute='roomNumber',
     ),
     'secretary': univention.admin.property(
         short_description=_('Superior'),
@@ -330,6 +366,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.UserDN,
         multivalue=True,
         copyable=True,
+        ldap_attribute='secretary',
     ),
     'departmentNumber': univention.admin.property(
         short_description=_('Department number'),
@@ -337,24 +374,30 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.OneThirdString,
         multivalue=True,
         copyable=True,
+        ldap_attribute='departmentNumber',
     ),
     'employeeType': univention.admin.property(
         short_description=_('Employee type'),
         long_description='',
         syntax=univention.admin.syntax.string,
         copyable=True,
+        ldap_attribute='employeeType',
     ),
     'homePostalAddress': univention.admin.property(
         short_description=_('Private postal address'),
         long_description='',
         syntax=univention.admin.syntax.postalAddress,
         multivalue=True,
+        ldap_attribute='homePostalAddress',
+        map=mapHomePostalAddress,
+        unmap=unmapHomePostalAddress,
     ),
     'physicalDeliveryOfficeName': univention.admin.property(
         short_description=_('Delivery office name'),
         long_description='',
         syntax=univention.admin.syntax.string,
         copyable=True,
+        ldap_attribute='physicalDeliveryOfficeName',
     ),
     'homeTelephoneNumber': univention.admin.property(
         short_description=_('Private telephone number'),
@@ -362,6 +405,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.phone,
         multivalue=True,
         readonly_when_synced=True,
+        ldap_attribute='homePhone',
     ),
     'mobileTelephoneNumber': univention.admin.property(
         short_description=_('Mobile phone number'),
@@ -369,6 +413,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.phone,
         multivalue=True,
         readonly_when_synced=True,
+        ldap_attribute='mobile',
     ),
     'pagerTelephoneNumber': univention.admin.property(
         short_description=_('Pager telephone number'),
@@ -376,11 +421,13 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.phone,
         multivalue=True,
         readonly_when_synced=True,
+        ldap_attribute='pager',
     ),
     'birthday': univention.admin.property(
         short_description=_('Birthdate'),
         long_description=_('Date of birth'),
         syntax=univention.admin.syntax.iso8601Date,
+        ldap_attribute='univentionBirthday',
     ),
     'unixhome': univention.admin.property(
         short_description=_('Unix home directory'),
@@ -388,6 +435,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.absolutePath,
         required=True,
         default='/home/<username>',
+        ldap_attribute='homeDirectory',
     ),
     'shell': univention.admin.property(
         short_description=_('Login shell'),
@@ -395,6 +443,8 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.OneThirdString,
         default='/bin/bash',
         copyable=True,
+        ldap_attribute='loginShell',
+        encoding='ASCII',
     ),
     'sambahome': univention.admin.property(
         short_description=_('Windows home path'),
@@ -402,6 +452,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.string,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='sambaHomePath',
     ),
     'scriptpath': univention.admin.property(
         short_description=_('Windows logon script'),
@@ -409,6 +460,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.string,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='sambaLogonScript',
     ),
     'profilepath': univention.admin.property(
         short_description=_('Windows profile directory'),
@@ -416,6 +468,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.string,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='sambaProfilePath',
     ),
     'homedrive': univention.admin.property(
         short_description=_('Windows home drive'),
@@ -423,6 +476,8 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.string,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='sambaHomeDrive',
+        encoding='ASCII',
     ),
     'sambaRID': univention.admin.property(
         short_description=_('Relative ID'),
@@ -454,6 +509,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.MailHomeServer,
         nonempty_is_default=True,
         copyable=True,
+        ldap_attribute='univentionMailHomeServer',
     ),
     'mailPrimaryAddress': univention.admin.property(
         short_description=_('Primary e-mail address (mailbox)'),
@@ -461,6 +517,9 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.primaryEmailAddressValidDomain,
         include_in_default_search=True,
         readonly_when_synced=True,
+        ldap_attribute='mailPrimaryAddress',
+        unmap=ListToLowerString,
+        encoding='ASCII',
     ),
     'mailAlternativeAddress': univention.admin.property(
         short_description=_('E-mail alias address'),
@@ -468,6 +527,8 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.emailAddressValidDomain,
         multivalue=True,
         copyable=True,
+        ldap_attribute='mailAlternativeAddress',
+        encoding='ASCII',
     ),
     'mailForwardAddress': univention.admin.property(
         short_description=_('Forward e-mail address'),
@@ -475,6 +536,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.emailAddress,
         multivalue=True,
         copyable=True,
+        ldap_attribute='mailForwardAddress',
     ),
     'mailForwardCopyToSelf': univention.admin.property(
         short_description=_('Forwarding setting'),
@@ -484,6 +546,7 @@ property_descriptions = dict({
         copyable=True,
         default='0',
         prevent_umc_default_popup=True,
+        ldap_attribute='mailForwardCopyToSelf',
     ),
     'overridePWHistory': univention.admin.property(
         short_description=_('Override password history'),
@@ -523,6 +586,9 @@ property_descriptions = dict({
         multivalue=True,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='sambaUserWorkstations',
+        map=sambaWorkstationsMap,
+        unmap=sambaWorkstationsUnmap,
     ),
     'sambaLogonHours': univention.admin.property(
         short_description=_('Permitted times for Windows logins'),
@@ -531,12 +597,19 @@ property_descriptions = dict({
         dontsearch=True,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='sambaLogonHours',
+        map=logonHoursMap,
+        unmap=logonHoursUnmap,
+        encoding='ASCII',
     ),
     'jpegPhoto': univention.admin.property(
         short_description=_("Picture of the user (JPEG format)"),
         long_description=_('Picture for user account in JPEG format'),
         syntax=univention.admin.syntax.jpegPhoto,
         dontsearch=True,
+        ldap_attribute='jpegPhoto',
+        map=mapBase64,
+        unmap=unmapBase64,
     ),
     'umcProperty': univention.admin.property(
         short_description=_('UMC user preferences'),
@@ -545,6 +618,9 @@ property_descriptions = dict({
         dontsearch=True,
         multivalue=True,
         copyable=True,
+        ldap_attribute='univentionUMCProperty',
+        map=mapKeyAndValue,
+        unmap=unmapKeyAndValue,
     ),
     'serviceSpecificPassword': univention.admin.property(
         short_description=_('Service Specific Password'),
@@ -560,6 +636,7 @@ property_descriptions = dict({
         syntax=univention.admin.syntax.string,
         may_change=False,
         dontsearch=True,
+        ldap_attribute='univentionSourceIAM',
     ),
 }, **pki_properties())
 
@@ -1012,67 +1089,17 @@ def unmapUTCDateTimeToLocaltime(attribute_value: Sequence[bytes], encoding: Sequ
 
 # fmt: off
 mapping = univention.admin.mapping.mapping()
-mapping.register('username', 'uid', None, univention.admin.mapping.ListToString)
-mapping.register('uidNumber', 'uidNumber', None, univention.admin.mapping.ListToString)
-mapping.register('gidNumber', 'gidNumber', None, univention.admin.mapping.ListToString)
-mapping.register('title', 'title', None, univention.admin.mapping.ListToString)
-mapping.register('initials', 'initials', None, univention.admin.mapping.ListToString)
-mapping.register('description', 'description', None, univention.admin.mapping.ListToString)
-mapping.register('organisation', 'o', None, univention.admin.mapping.ListToString)
+mapping.from_properties(property_descriptions)
 
-mapping.register('mailPrimaryAddress', 'mailPrimaryAddress', None, univention.admin.mapping.ListToLowerString, encoding='ASCII')
-mapping.register('mailAlternativeAddress', 'mailAlternativeAddress', encoding='ASCII')
-mapping.register('mailHomeServer', 'univentionMailHomeServer', None, univention.admin.mapping.ListToString)
-mapping.register('mailForwardAddress', 'mailForwardAddress')
 if configRegistry.is_true('directory/manager/user/activate_ldap_attribute_mailForwardCopyToSelf', False):
     mapping.register('mailForwardCopyToSelf', 'mailForwardCopyToSelf', None, univention.admin.mapping.ListToString)
 
-mapping.register('preferredLanguage', 'preferredLanguage', None, univention.admin.mapping.ListToString)
-mapping.register('street', 'street', None, univention.admin.mapping.ListToString)
-mapping.register('e-mail', 'mail', encoding='ASCII')
-mapping.register('postcode', 'postalCode', None, univention.admin.mapping.ListToString)
-mapping.register('postOfficeBox', 'postOfficeBox')
-mapping.register('city', 'l', None, univention.admin.mapping.ListToString)
-mapping.register('country', 'c', None, univention.admin.mapping.ListToString)
-mapping.register('state', 'st', None, univention.admin.mapping.ListToString)
-mapping.register('phone', 'telephoneNumber')
-mapping.register('roomNumber', 'roomNumber')
-mapping.register('employeeNumber', 'employeeNumber', None, univention.admin.mapping.ListToString)
-mapping.register('employeeType', 'employeeType', None, univention.admin.mapping.ListToString)
-mapping.register('secretary', 'secretary')
-mapping.register('departmentNumber', 'departmentNumber')
-mapping.register('mobileTelephoneNumber', 'mobile')
-mapping.register('pagerTelephoneNumber', 'pager')
-mapping.register('homeTelephoneNumber', 'homePhone')
-mapping.register('homePostalAddress', 'homePostalAddress', mapHomePostalAddress, unmapHomePostalAddress)
-mapping.register('physicalDeliveryOfficeName', 'physicalDeliveryOfficeName', None, univention.admin.mapping.ListToString)
-mapping.register('preferredDeliveryMethod', 'preferredDeliveryMethod', None, univention.admin.mapping.ListToString)
-mapping.register('unixhome', 'homeDirectory', None, univention.admin.mapping.ListToString)
-mapping.register('shell', 'loginShell', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('sambahome', 'sambaHomePath', None, univention.admin.mapping.ListToString)
-mapping.register('sambaUserWorkstations', 'sambaUserWorkstations', sambaWorkstationsMap, sambaWorkstationsUnmap)
-mapping.register('sambaLogonHours', 'sambaLogonHours', logonHoursMap, logonHoursUnmap, encoding='ASCII')
-mapping.register('sambaPrivileges', 'univentionSambaPrivilegeList', encoding='ASCII')
-mapping.register('scriptpath', 'sambaLogonScript', None, univention.admin.mapping.ListToString)
-mapping.register('profilepath', 'sambaProfilePath', None, univention.admin.mapping.ListToString)
-mapping.register('homedrive', 'sambaHomeDrive', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('gecos', 'gecos', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('displayName', 'displayName', None, univention.admin.mapping.ListToString)
-mapping.register('birthday', 'univentionBirthday', None, univention.admin.mapping.ListToString)
-mapping.register('lastname', 'sn', None, univention.admin.mapping.ListToString)
-mapping.register('firstname', 'givenName', None, univention.admin.mapping.ListToString)
-mapping.register('jpegPhoto', 'jpegPhoto', univention.admin.mapping.mapBase64, univention.admin.mapping.unmapBase64)
-mapping.register('umcProperty', 'univentionUMCProperty', mapKeyAndValue, unmapKeyAndValue)
-mapping.register('lockedTime', 'sambaBadPasswordTime', mapWindowsFiletime, unmapWindowsFiletime)
-mapping.register('accountActivationDate', 'krb5ValidStart', mapDateTimeTimezoneTupleToUTCDateTimeString, unmapUTCDateTimeToLocaltime, encoding='ASCII')
-mapping.register('univentionSourceIAM', 'univentionSourceIAM', None, univention.admin.mapping.ListToString)
 
 mapping.registerUnmapping('sambaRID', unmapSambaRid)
 mapping.registerUnmapping('passwordexpiry', unmapPasswordExpiry)
 mapping.registerUnmapping('userexpiry', unmapUserExpiry)
 mapping.registerUnmapping('disabled', unmapDisabled)
 mapping.registerUnmapping('locked', unmapLocked)
-mapping.register('password', 'userPassword', univention.admin.mapping.dontMap(), univention.admin.mapping.ListToString)
 register_pki_mapping(mapping)
 register_role_mapping(mapping)
 # fmt: on

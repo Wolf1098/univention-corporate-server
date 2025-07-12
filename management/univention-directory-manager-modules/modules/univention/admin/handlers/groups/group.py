@@ -65,6 +65,7 @@ property_descriptions = {
         required=True,
         identifies=True,
         readonly_when_synced=True,
+        ldap_attribute='cn',
     ),
     'gidNumber': univention.admin.property(
         short_description=_('Group ID'),
@@ -72,6 +73,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.integer,
         may_change=False,
         options=['posix', 'samba'],
+        ldap_attribute='gidNumber',
+        encoding='ASCII',
     ),
     'sambaRID': univention.admin.property(
         short_description=_('Relative ID'),
@@ -87,6 +90,7 @@ property_descriptions = {
         default=('2', []),
         options=['samba'],
         copyable=True,
+        ldap_attribute='sambaGroupType',
     ),
     'sambaPrivileges': univention.admin.property(
         short_description=_('Samba privilege'),
@@ -95,6 +99,8 @@ property_descriptions = {
         multivalue=True,
         options=['samba'],
         copyable=True,
+        ldap_attribute='univentionSambaPrivilegeList',
+        encoding='ASCII',
     ),
     'adGroupType': univention.admin.property(
         short_description=_('AD group type'),
@@ -105,6 +111,7 @@ property_descriptions = {
         dontsearch=True,
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='univentionGroupType',
     ),
     'description': univention.admin.property(
         short_description=_('Description'),
@@ -114,6 +121,7 @@ property_descriptions = {
         options=['posix', 'samba'],
         readonly_when_synced=True,
         copyable=True,
+        ldap_attribute='description',
     ),
     'users': univention.admin.property(
         short_description=_('Users'),
@@ -143,6 +151,8 @@ property_descriptions = {
         include_in_default_search=True,
         options=['posix'],
         readonly_when_synced=True,
+        ldap_attribute='mailPrimaryAddress',
+        encoding='ASCII',
     ),
     'memberOf': univention.admin.property(
         short_description=_('Member of'),
@@ -172,6 +182,7 @@ property_descriptions = {
         options=['posix'],
         dontsearch=True,
         copyable=True,
+        ldap_attribute='univentionAllowedEmailUsers',
     ),
     'allowedEmailGroups': univention.admin.property(
         short_description=_('Groups that are allowed to send e-mails to the group'),
@@ -181,6 +192,7 @@ property_descriptions = {
         options=['posix'],
         dontsearch=True,
         copyable=True,
+        ldap_attribute='univentionAllowedEmailGroups',
     ),
     'univentionSourceIAM': univention.admin.property(
         short_description=_('Immutable Identifier of the source IAM'),
@@ -188,6 +200,7 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         may_change=False,
         dontsearch=True,
+        ldap_attribute='univentionSourceIAM',
     ),
 }
 
@@ -239,17 +252,8 @@ def unmapSambaRid(oldattr):
 
 # fmt: off
 mapping = univention.admin.mapping.mapping()
-mapping.register('name', 'cn', None, univention.admin.mapping.ListToString)
-mapping.register('gidNumber', 'gidNumber', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('description', 'description', None, univention.admin.mapping.ListToString)
-mapping.register('sambaGroupType', 'sambaGroupType', None, univention.admin.mapping.ListToString)
-mapping.register('mailAddress', 'mailPrimaryAddress', None, univention.admin.mapping.ListToString, encoding='ASCII')
-mapping.register('adGroupType', 'univentionGroupType', None, univention.admin.mapping.ListToString)
-mapping.register('sambaPrivileges', 'univentionSambaPrivilegeList', encoding='ASCII')
-mapping.register('allowedEmailUsers', 'univentionAllowedEmailUsers')
-mapping.register('allowedEmailGroups', 'univentionAllowedEmailGroups')
+mapping.from_properties(property_descriptions)
 mapping.registerUnmapping('sambaRID', unmapSambaRid)
-mapping.register('univentionSourceIAM', 'univentionSourceIAM', None, univention.admin.mapping.ListToString)
 register_member_role_mapping(mapping)
 # fmt: on
 

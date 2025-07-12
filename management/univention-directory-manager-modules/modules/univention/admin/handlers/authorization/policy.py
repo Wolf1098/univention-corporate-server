@@ -44,12 +44,14 @@ property_descriptions = {
         required=True,
         may_change=False,
         identifies=True,
+        ldap_attribute='cn',
     ),
     'description': univention.admin.property(
         short_description=_('Description'),
         long_description='',
         syntax=univention.admin.syntax.string,
         size='Two',
+        ldap_attribute='description',
     ),
     'roles': univention.admin.property(
         short_description=_('Roles'),
@@ -58,6 +60,7 @@ property_descriptions = {
         multivalue=True,
         required=True,
         size='Two',
+        ldap_attribute='univentionAuthorizationRole',
     ),
     'privileges': univention.admin.property(
         short_description=_('Privileges'),
@@ -66,6 +69,7 @@ property_descriptions = {
         required=True,
         multivalue=True,
         size='Two',
+        ldap_attribute='univentionAuthorizationTo',
     ),
 }
 
@@ -83,10 +87,7 @@ layout = [
 ]
 
 mapping = univention.admin.mapping.mapping()
-mapping.register('name', 'cn', None, univention.admin.mapping.ListToString)
-mapping.register('description', 'description', None, univention.admin.mapping.ListToString)
-mapping.register('roles', 'univentionAuthorizationRole')
-mapping.register('privileges', 'univentionAuthorizationTo')
+mapping.from_properties(property_descriptions)
 # fmt: on
 
 

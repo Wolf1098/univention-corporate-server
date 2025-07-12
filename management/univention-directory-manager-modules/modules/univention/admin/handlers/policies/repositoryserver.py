@@ -56,12 +56,14 @@ property_descriptions = dict({
         required=True,
         may_change=False,
         identifies=True,
+        ldap_attribute='cn',
     ),
     'repositoryServer': univention.admin.property(
         short_description=_('Repository server'),
         long_description='',
         syntax=univention.admin.syntax.UCS_Server,
         include_in_default_search=True,
+        ldap_attribute='univentionRepositoryServer',
     ),
 
 }, **dict([
@@ -83,8 +85,7 @@ layout = [
 ]
 
 mapping = univention.admin.mapping.mapping()
-mapping.register('name', 'cn', None, univention.admin.mapping.ListToString)
-mapping.register('repositoryServer', 'univentionRepositoryServer', None, univention.admin.mapping.ListToString)
+mapping.from_properties(property_descriptions)
 register_policy_mapping(mapping)
 # fmt: on
 

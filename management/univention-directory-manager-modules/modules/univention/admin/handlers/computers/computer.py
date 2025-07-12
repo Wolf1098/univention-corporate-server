@@ -36,6 +36,7 @@ property_descriptions = {
         include_in_default_search=True,
         required=True,
         identifies=True,
+        ldap_attribute='cn',
     ),
     'dnsAlias': univention.admin.property(
         short_description=_('DNS alias'),
@@ -48,6 +49,7 @@ property_descriptions = {
         long_description='',
         syntax=univention.admin.syntax.string,
         include_in_default_search=True,
+        ldap_attribute='description',
     ),
     'mac': univention.admin.property(
         short_description=_('MAC address'),
@@ -55,6 +57,8 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         multivalue=True,
         include_in_default_search=True,
+        ldap_attribute='macAddress',
+        encoding='ASCII',
     ),
     'ip': univention.admin.property(
         short_description=_('IP address'),
@@ -69,6 +73,7 @@ property_descriptions = {
         syntax=univention.admin.syntax.string,
         multivalue=True,
         include_in_default_search=True,
+        ldap_attribute='univentionInventoryNumber',
     ),
     'fqdn': univention.admin.property(
         short_description='FQDN',
@@ -81,10 +86,7 @@ property_descriptions = {
 }
 
 mapping = univention.admin.mapping.mapping()
-mapping.register('name', 'cn', None, univention.admin.mapping.ListToString)
-mapping.register('description', 'description', None, univention.admin.mapping.ListToString)
-mapping.register('inventoryNumber', 'univentionInventoryNumber')
-mapping.register('mac', 'macAddress', encoding='ASCII')
+mapping.from_properties(property_descriptions)
 
 
 class object(univention.admin.handlers.simpleLdap):
