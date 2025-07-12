@@ -42,6 +42,46 @@ class RestClientHelper(UDM_REST):
         self.mail_domain_module = self.get('mail/domain')
         self.group_module = self.get('groups/group')
 
+    def create_computer(self, position: str, name: str | None = None, ip: str | None = None, **properties):
+        computer_module = self.get('computers/linux')
+        obj = computer_module.new(position=position)
+        obj.properties['name'] = name or random_username()
+        if ip:
+            obj.properties['ip'] = [ip] if isinstance(ip, str) else ip
+        for prop, value in properties.items():
+            obj.properties[prop] = value
+        obj.save()
+        return obj
+
+    def get_computer(self, dn: str, properties: list[str] | None = None):
+        computer_module = self.get('computers/linux')
+        return computer_module.get(dn, properties=properties)
+
+    def modify_computer(self, dn: str, changes: dict):
+        computer_module = self.get('computers/linux')
+        obj = computer_module.get(dn)
+        for prop, value in changes.items():
+            obj.properties[prop] = value
+        obj.save()
+        return obj
+
+    def delete_computer(self, dn: str):
+        computer_module = self.get('computers/linux')
+        obj = computer_module.get(dn)
+        obj.delete()
+        with pytest.raises(UnprocessableEntity):
+            computer_module.get(dn)
+
+    def search_computer(self, filter_s: str = '', position: str | None = None):
+        computer_module = self.get('computers/linux')
+        return list(computer_module.search(filter_s, position=position))
+
+    def get_group(self, dn: str, properties: list[str] | None = None):
+        return self.group_module.get(dn, properties=properties)
+
+    def search_group(self, filter_s: str = '', position: str | None = None):
+        return list(self.group_module.search(filter_s, position=position))
+
     def create_user(self, position: str):
         obj = self.user_module.new(position=position)
         obj.properties['username'] = random_username()
@@ -104,6 +144,97 @@ class ClientHelper(Client):
                 return req
             time.sleep(1)
 
+    def create_computer(self, position: str, name: str | None = None, ip: str | None = None, **properties):
+        obj_properties = {
+            'name': name or random_username(),
+            'unixhome': '/dev/null',
+            'shell': '/bin/bash',
+        }
+        if ip:
+            obj_properties['ip'] = [ip] if isinstance(ip, str) else ip
+        obj_properties.update(properties)
+
+        options = [{
+            'object': obj_properties,
+            'options': {
+                'container': position,
+                'objectType': 'computers/linux',
+            },
+        }]
+        return self.umc_command('udm/add', options, 'computers/linux').result[0]
+
+    def get_computer(self, dn: str):
+        return self.umc_command('udm/get', [dn], 'computers/linux').result[0]
+
+    def modify_computer(self, dn: str, changes: dict):
+        changes_with_dn = {'$dn$': dn, **changes}
+        return self.umc_command('udm/put', [{'object': changes_with_dn}], 'computers/linux').result[0]
+
+    def delete_computer(self, dn: str):
+        options = [{
+            'object': dn,
+            'options': {
+                'cleanup': True,
+                'recursive': True,
+            },
+        }]
+        return self.umc_command('udm/remove', options, 'computers/linux').result[0]
+
+    def search_computer(self, filter_value: str = '', container: str = 'all'):
+        search_options = {
+            "container": container,
+            "hidden": False,
+            "objectType": 'computers/linux',
+            "objectProperty": "None",
+            "objectPropertyValue": filter_value,
+            "fields": ["name", "path", "displayName"],
+        }
+        return self.umc_command('udm/query', search_options, 'computers/linux').result
+
+    def get_group(self, dn: str):
+        return self.umc_command('udm/get', [dn], 'groups/group').result[0]
+
+    def modify_group(self, dn: str, changes: dict):
+        changes_with_dn = {'$dn$': dn, **changes}
+        return self.umc_command('udm/put', [{'object': changes_with_dn}], 'groups/group').result[0]
+
+    def search_group(self, filter_value: str = '', container: str = 'all'):
+        search_options = {
+            "container": container,
+            "hidden": False,
+            "objectType": 'groups/group',
+            "objectProperty": "None",
+            "objectPropertyValue": filter_value,
+            "fields": ["name", "path", "displayName"],
+        }
+        return self.umc_command('udm/query', search_options, 'groups/group').result
+
+    def get_object(self, object_type: str, dn: str):
+        return self.umc_command('udm/get', [dn], object_type).result[0]
+
+    def create_object(self, object_type: str, container: str, properties: dict):
+        options = [{
+            'object': properties,
+            'options': {
+                'container': container,
+                'objectType': object_type,
+            },
+        }]
+        return self.umc_command('udm/add', options, object_type).result[0]
+
+    def search_objects(self, object_type: str, filter_value: str = '', container: str = 'all', flavor: str | None = None):
+        search_options = {
+            "container": container,
+            "hidden": False,
+            "objectType": object_type,
+            "objectProperty": "None",
+            "objectPropertyValue": filter_value,
+            "fields": ["name", "path", "displayName"],
+        }
+        if flavor:
+            search_options['flavor'] = flavor
+        return self.umc_command('udm/query', search_options, object_type).result
+
     def delete_object(self, dn: str, object_type: str) -> None:
         options = [{
             'object': dn,
@@ -123,15 +254,6 @@ class ClientHelper(Client):
         }]
         result = self.umc_command('udm/move', options, object_type).result
         return self.wait_for_progress(result['id'], object_type).result['intermediate'][0]
-
-    def modify_object(self, dn: str, changes: dict, object_type: str):
-        changes['$dn$'] = dn
-        return self.umc_command('udm/put', [{'object': changes}], object_type).result[0]
-
-    def get_object(self, dn: str, object_type: str):
-        options = [dn]
-        res = self.umc_command('udm/get', options, object_type)
-        return res.result[0]
 
     def create_user(self, position: str):
         options = [{
@@ -223,6 +345,22 @@ def ou_helpdesk_operator_rest_client(ucr, ou):
 
 
 @pytest.fixture
+def linux_client_manager_umc_client(ou):
+    client = ClientHelper()
+    client.authenticate(ou.client_manager_username, 'univention')
+    return client
+
+
+@pytest.fixture
+def linux_client_manager_rest_client(ucr, ou):
+    return RestClientHelper(
+        'https://%(hostname)s.%(domainname)s/univention/udm/' % ucr,
+        username=ou.client_manager_username,
+        password='univention',
+    )
+
+
+@pytest.fixture
 def ou(ldap_base, udm):
     return SimpleNamespace(
         dn=f'ou=ou1,{ldap_base}',
@@ -235,8 +373,11 @@ def ou(ldap_base, udm):
         user_dn=f'uid=user1-ou1,cn=users,ou=ou1,{ldap_base}',
         helpdesk_operator_username='ou1-helpdesk-operator',
         helpdesk_operator_dn=f'uid=ou1-helpdesk-operator,cn=users,{ldap_base}',
+        client_manager_username='ou1-clientmanager',
+        client_manager_dn=f'uid=ou1-clientmanager,cn=users,{ldap_base}',
         user_default_container=f'cn=users,ou=ou1,{ldap_base}',
         group_default_container=f'cn=groups,ou=ou1,{ldap_base}',
+        computer_default_container=f'cn=computers,ou=ou1,{ldap_base}',
     )
 
 

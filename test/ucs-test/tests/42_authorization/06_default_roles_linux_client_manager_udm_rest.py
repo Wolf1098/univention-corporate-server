@@ -5,13 +5,11 @@
 ##  - domaincontroller_backup
 ## exposure: dangerous
 
-import locale
-from types import SimpleNamespace
-
 import pytest
 import requests
+import urllib3
 
-from univention.admin.rest.client import UDM as UDM_REST, Forbidden, UnprocessableEntity
+from univention.admin.rest.client import Forbidden, UnprocessableEntity
 from univention.config_registry import ucr as _ucr
 from univention.testing import utils
 from univention.testing.strings import random_ip
@@ -19,28 +17,8 @@ from univention.testing.strings import random_ip
 
 check_delegation = pytest.mark.skipif(not _ucr.is_true('directory/manager/rest/delegative-administration/enabled'), reason='directory/manager/rest/delegative-administration/enabled not activated')
 
-
-TRANSLATIONS = {
-    'de_DE': {
-        'Insufficient privileges': 'Unzureichende Berechtigung',
-        'Permission denied': 'Zugriff verweigert',
-        'No such object': 'Das Objekt existiert nicht',
-    },
-}
-
-
-def _(string: str) -> str:
-    code, _ = locale.getlocale()
-    return TRANSLATIONS.get(code, {}).get(string, string)
-
-
-def create_udm_rest_client(username):
-    """Create UDM-REST client for the given username."""
-    return UDM_REST(
-        'https://%(hostname)s.%(domainname)s/univention/udm/' % _ucr,
-        username=username,
-        password=utils.UCSTestDomainAdminCredentials().bindpw,
-    )
+# Disable SSL warnings for test environment with self-signed certificates
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def make_udm_rest_request(method, object_type, object_dn, username, body=None):
@@ -73,24 +51,6 @@ def make_udm_rest_request(method, object_type, object_dn, username, body=None):
         headers=headers,
         verify=False,
     )
-
-
-@pytest.fixture
-def ou(ldap_base):
-    return SimpleNamespace(
-        dn=f'ou=ou1,{ldap_base}',
-        client_manager_username='ou1-clientmanager',
-        client_manager_dn=f'uid=ou1-clientmanager,cn=users,{ldap_base}',
-        computer_default_container=f'cn=computers,ou=ou1,{ldap_base}',
-        admin_username='ou1-admin',
-        admin_dn=f'uid=ou1-admin,cn=users,{ldap_base}',
-    )
-
-
-@pytest.fixture
-def linux_client_manager_user(ou, ldap_base):
-    """Get the existing linux client manager user created by setup script."""
-    return f'uid={ou.client_manager_username},cn=users,{ldap_base}'
 
 
 @pytest.fixture
@@ -148,12 +108,9 @@ def test_group_at_base(ldap_base, udm, random_username):
 
 
 @check_delegation
-def test_linux_client_read_allowed(ou, test_computer_in_ou):
+def test_linux_client_read_allowed(linux_client_manager_rest_client, test_computer_in_ou):
     """Test that linux client manager can read computers in their OU via UDM-REST."""
-    udm_rest = create_udm_rest_client(ou.client_manager_username)
-    computers_module = udm_rest.get('computers/linux')
-
-    computer = computers_module.get(test_computer_in_ou)
+    computer = linux_client_manager_rest_client.get_computer(test_computer_in_ou)
     assert computer
     assert computer.dn == test_computer_in_ou
     assert 'name' in computer.properties
@@ -161,46 +118,37 @@ def test_linux_client_read_allowed(ou, test_computer_in_ou):
 
 
 @check_delegation
-def test_linux_client_read_denied_cross_ou(ou, test_computer_at_base):
+def test_linux_client_read_denied_cross_ou(linux_client_manager_rest_client, test_computer_at_base):
     """Test that linux client manager cannot read computers outside their OU via UDM-REST."""
-    udm_rest = create_udm_rest_client(ou.client_manager_username)
-    computers_module = udm_rest.get('computers/linux')
-
     with pytest.raises(UnprocessableEntity):
-        computers_module.get(test_computer_at_base)
+        linux_client_manager_rest_client.get_computer(test_computer_at_base)
 
 
 @check_delegation
-def test_linux_client_search_scope(ou, test_computer_in_ou, test_computer_at_base, udm):
+def test_linux_client_search_scope(linux_client_manager_rest_client, ou, test_computer_in_ou, test_computer_at_base, udm):
     """Test that linux client manager can only search computers in their OU via UDM-REST."""
-    udm_rest = create_udm_rest_client(ou.client_manager_username)
-    computers_module = udm_rest.get('computers/linux')
-
     # Test 1: Global search should be restricted
-    computers = list(computers_module.search())
+    computers = linux_client_manager_rest_client.search_computer()
     found_dns = {computer.dn for computer in computers}
 
     # Global search should be restricted
     assert found_dns == {x[0] for x in udm.list_objects('computers/linux', properties=["DN"], position=ou.dn)}
 
     # Test 2: Direct access to computer in OU should work
-    computer = computers_module.get(test_computer_in_ou)
+    computer = linux_client_manager_rest_client.get_computer(test_computer_in_ou)
     assert computer.dn == test_computer_in_ou
 
     # Test 3: Cannot access computers outside OU
     with pytest.raises(UnprocessableEntity):
-        computers_module.get(test_computer_at_base)
+        linux_client_manager_rest_client.get_computer(test_computer_at_base)
 
 
 @check_delegation
-def test_linux_client_modify_allowed(ou, test_computer_in_ou):
+def test_linux_client_modify_allowed(linux_client_manager_rest_client, test_computer_in_ou):
     """Test that linux client manager can modify computers in their OU via UDM-REST."""
-    udm_rest = create_udm_rest_client(ou.client_manager_username)
-    computers_module = udm_rest.get('computers/linux')
-
-    computer = computers_module.get(test_computer_in_ou)
-    computer.properties['description'] = 'Modified by linux client manager via UDM-REST'
-    computer.save()
+    computer = linux_client_manager_rest_client.modify_computer(test_computer_in_ou, {
+        'description': 'Modified by linux client manager via UDM-REST',
+    })
 
     computer.reload()
     assert computer.properties['description'] == 'Modified by linux client manager via UDM-REST'
@@ -234,20 +182,18 @@ def test_linux_client_modify_denied_cross_ou(ou, test_computer_at_base):
 
 
 @check_delegation
-def test_linux_client_create_computer_allowed(ou, random_username):
+def test_linux_client_create_computer_allowed(linux_client_manager_rest_client, ou, random_username):
     """Test that linux client manager can create new computers in their OU via UDM-REST."""
-    udm_rest = create_udm_rest_client(ou.client_manager_username)
-    computers_module = udm_rest.get('computers/linux')
-
     computer_name = f'new-linux-{random_username()}'
     unique_ip = random_ip()
 
-    computer = computers_module.new(position=ou.computer_default_container)
-    computer.properties['name'] = computer_name
-    computer.properties['ip'] = [unique_ip]
-    computer.properties['unixhome'] = '/dev/null'
-    computer.properties['shell'] = '/bin/bash'
-    computer.save()
+    computer = linux_client_manager_rest_client.create_computer(
+        position=ou.computer_default_container,
+        name=computer_name,
+        ip=[unique_ip],
+        unixhome='/dev/null',
+        shell='/bin/bash',
+    )
 
     assert computer.dn
     assert computer_name in computer.dn
@@ -258,28 +204,25 @@ def test_linux_client_create_computer_allowed(ou, random_username):
 
 
 @check_delegation
-def test_linux_client_create_computer_denied_cross_ou(ou, ldap_base, udm, random_username):
+def test_linux_client_create_computer_denied_cross_ou(linux_client_manager_rest_client, ldap_base, random_username):
     """Test that linux client manager cannot create computers outside their OU via UDM-REST."""
     ou2_dn = f'ou=ou2,{ldap_base}'
-
-    udm_rest = create_udm_rest_client(ou.client_manager_username)
-    computers_module = udm_rest.get('computers/linux')
 
     computer_name = f'denied-linux-{random_username()}'
     unique_ip = random_ip()
 
-    computer = computers_module.new(position=f'cn=computers,{ou2_dn}')
-    computer.properties['name'] = computer_name
-    computer.properties['ip'] = [unique_ip]
-    computer.properties['unixhome'] = '/dev/null'
-    computer.properties['shell'] = '/bin/bash'
-
     with pytest.raises(Forbidden):
-        computer.save()
+        linux_client_manager_rest_client.create_computer(
+            position=f'cn=computers,{ou2_dn}',
+            name=computer_name,
+            ip=[unique_ip],
+            unixhome='/dev/null',
+            shell='/bin/bash',
+        )
 
 
 @check_delegation
-def test_linux_client_delete_allowed(ou, udm, random_username):
+def test_linux_client_delete_allowed(linux_client_manager_rest_client, ou, udm, random_username):
     """Test that linux client manager can delete computers in their OU via UDM-REST."""
     computer_name = f'delete-test-{random_username()}'
     unique_ip = random_ip()
@@ -291,13 +234,9 @@ def test_linux_client_delete_allowed(ou, udm, random_username):
         position=f'cn=computers,{ou.dn}',
     )
 
-    udm_rest = create_udm_rest_client(ou.client_manager_username)
-    computers_module = udm_rest.get('computers/linux')
+    linux_client_manager_rest_client.delete_computer(computer_dn)
 
-    computer = computers_module.get(computer_dn)
-    computer.delete()
-
-    computers = list(computers_module.search(f'name={computer_name}'))
+    computers = linux_client_manager_rest_client.search_computer(f'name={computer_name}')
     assert computers == []
 
 
@@ -322,44 +261,37 @@ def test_linux_client_delete_denied_cross_ou(ou, test_computer_at_base):
 
 
 @check_delegation
-def test_linux_client_manager_can_access_groups_in_ou(ou, test_group_in_ou):
+def test_linux_client_manager_can_access_groups_in_ou(linux_client_manager_rest_client, test_group_in_ou):
     """Test that linux client manager can access group objects within their OU via UDM-REST (OU-specific security model)."""
-    udm_rest = create_udm_rest_client(ou.client_manager_username)
-    groups_module = udm_rest.get('groups/group')
-
-    group = groups_module.get(test_group_in_ou)
+    group = linux_client_manager_rest_client.get_group(test_group_in_ou)
     assert group.dn == test_group_in_ou
     assert 'name' in group.properties
 
 
 @check_delegation
-def test_linux_client_manager_cannot_access_base_level_groups(ou, test_group_at_base):
+def test_linux_client_manager_cannot_access_base_level_groups(linux_client_manager_rest_client, test_group_at_base):
     """Test that linux client manager cannot access base-level groups via UDM-REST (security improvement)."""
-    udm_rest = create_udm_rest_client(ou.client_manager_username)
-    groups_module = udm_rest.get('groups/group')
-
     # Should not be able to access base-level groups anymore
     with pytest.raises(UnprocessableEntity):
-        groups_module.get(test_group_at_base)
+        linux_client_manager_rest_client.get_group(test_group_at_base)
 
 
 @check_delegation
-def test_linux_client_manager_can_modify_group_memberships_in_ou(ou, test_computer_in_ou, test_group_in_ou):
+def test_linux_client_manager_can_modify_group_memberships_in_ou(linux_client_manager_rest_client, test_computer_in_ou, test_group_in_ou):
     """Test that linux client manager can modify group memberships for groups within their OU via UDM-REST."""
-    udm_rest = create_udm_rest_client(ou.client_manager_username)
-    groups_module = udm_rest.get('groups/group')
-
-    group = groups_module.get(test_group_in_ou)
+    group = linux_client_manager_rest_client.get_group(test_group_in_ou)
     current_hosts = group.properties.get('hosts', [])
-    group.properties['hosts'] = [*current_hosts, test_computer_in_ou]
-    group.save()
+
+    linux_client_manager_rest_client.modify_group(test_group_in_ou, {
+        'hosts': [*current_hosts, test_computer_in_ou],
+    })
 
     group.reload()
     assert test_computer_in_ou in group.properties.get('hosts', [])
 
 
 @check_delegation
-def test_linux_client_manager_cannot_access_users(ou, udm, random_username):
+def test_linux_client_manager_cannot_access_users(linux_client_manager_rest_client, ou, udm, random_username):
     """Test that linux client manager cannot access user objects via UDM-REST."""
     user_dn = udm.create_object(
         'users/user',
@@ -369,39 +301,35 @@ def test_linux_client_manager_cannot_access_users(ou, udm, random_username):
         position=f'cn=users,{ou.dn}',
     )
 
-    udm_rest = create_udm_rest_client(ou.client_manager_username)
-    users_module = udm_rest.get('users/user')
-
     with pytest.raises(UnprocessableEntity):
-        users_module.get(user_dn)
-
-    user = users_module.new(position=f'cn=users,{ou.dn}')
-    user.properties['username'] = f'newuser-{random_username()}'
-    user.properties['lastname'] = 'TestUser'
-    user.properties['password'] = 'univention'
+        user_module = linux_client_manager_rest_client.get('users/user')
+        user_module.get(user_dn)
 
     with pytest.raises(Forbidden):
-        user.save()
+        user_module = linux_client_manager_rest_client.get('users/user')
+        obj = user_module.new(position=f'cn=users,{ou.dn}')
+        obj.properties['username'] = f'newuser-{random_username()}'
+        obj.properties['lastname'] = 'TestUser'
+        obj.properties['password'] = 'univention'
+        obj.save()
 
 
 @check_delegation
-def test_linux_client_manager_cannot_access_global_features(ou):
+def test_linux_client_manager_cannot_access_global_features(linux_client_manager_rest_client):
     """Test that linux client manager cannot access global system administration features via UDM-REST."""
-    udm_rest = create_udm_rest_client(ou.client_manager_username)
-
     # Test mail domain access
-    mail_module = udm_rest.get('mail/domain')
-    mail_domains = list(mail_module.search())
+    mail_domain_module = linux_client_manager_rest_client.get('mail/domain')
+    mail_domains = list(mail_domain_module.search())
     assert mail_domains == []
 
     # Test DNS zone access
-    dns_module = udm_rest.get('dns/forward_zone')
-    dns_zones = list(dns_module.search())
+    dns_zone_module = linux_client_manager_rest_client.get('dns/forward_zone')
+    dns_zones = list(dns_zone_module.search())
     assert dns_zones == []
 
     # Test policy access
     policy_types = ['policies/desktop', 'policies/pwhistory', 'policies/umc']
     for policy_type in policy_types:
-        policy_module = udm_rest.get(policy_type)
+        policy_module = linux_client_manager_rest_client.get(policy_type)
         policies = list(policy_module.search())
         assert policies == []
