@@ -939,7 +939,7 @@ class access:
 
     def _handle_referral(self, exception: ldap.REFERRAL) -> ldap.ldapobject.ReconnectLDAPObject:
         """
-        Follow LDAP rederral.
+        Follow LDAP referral.
 
         :param ldap.REFERRAL exception: The LDAP referral exception.
         :returns: LDAP connection object for the referred LDAP server.
