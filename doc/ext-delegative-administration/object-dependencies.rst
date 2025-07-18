@@ -34,7 +34,7 @@ The following table lists all UDM object types that hold references to other obj
 
    While most object references require **read** permission on the referenced object, some specific use cases may require additional permissions:
 
-   - **search** permission may be needed for dropdown/selection widgets
+   - **search** permission may be needed for drop-down or selection widgets
    - **modify** permission may be required when the relationship itself needs to be changed
    - Context-specific permissions may apply based on the role and operation being performed
 
@@ -46,132 +46,132 @@ The following table lists all UDM object types that hold references to other obj
      - Refers To
      - Required Permission
      - Description
-   * - computer
-     - network
+   * - ``computer``
+     - ``network``
      - read
      - Needed to select a network during creation/modification
-   * - computer
-     - dnsEntry
+   * - ``computer``
+     - ``dnsEntry``
      - read
      - DNS configuration for clients
-   * - user
-     - groups
-     - read
-     - To assign user to groups
-   * - group
-     - users
-     - read
-     - Required for managing group memberships
-   * - school
-     - location/address
-     - read
-     - Address data visibility
-   * - host
-     - policies
-     - read
-     - Policy application overview
-   * - computer
-     - dhcpEntry
+   * - ``computer``
+     - ``dhcpEntry``
      - read
      - DHCP configuration for clients
-   * - user
-     - primaryGroup
+   * - ``user``
+     - ``groups``
+     - read
+     - To assign user to groups
+   * - ``user``
+     - ``primaryGroup``
      - read
      - Primary group assignment
-   * - group
-     - nestedGroups
-     - read
-     - Group hierarchy management
-   * - container/ou
-     - defaultGroup
-     - read
-     - Default group settings for organizational units
-   * - dns/forward_zone
-     - host_record
-     - read
-     - Host records within DNS zones
-   * - dns/reverse_zone
-     - ptr_record
-     - read
-     - Pointer records for reverse lookup
-   * - shares/share
-     - host
-     - read
-     - Share location and access
-   * - nagios/service
-     - host
-     - read
-     - Monitoring service targets
-   * - mail/folder
-     - domain
-     - read
-     - Mail folder domain association
-   * - printer
-     - host
-     - read
-     - Printer host connection
-   * - user
-     - mail/domain
+   * - ``user``
+     - ``mail/domain``
      - read
      - Email domain assignment and configuration
-   * - user
-     - user
+   * - ``user``
+     - ``user``
      - read
      - Secretary and delegation relationships
-   * - settings/directory
-     - policies
+   * - ``group``
+     - ``users``
+     - read
+     - Required for managing group memberships
+   * - ``group``
+     - ``nestedGroups``
+     - read
+     - Group hierarchy management
+   * - ``school``
+     - ``location/address``
+     - read
+     - Address data visibility
+   * - ``host``
+     - ``policies``
+     - read
+     - Policy application overview
+   * - ``container/ou``
+     - ``defaultGroup``
+     - read
+     - Default group settings for organizational units
+   * - ``dns/forward_zone``
+     - ``host_record``
+     - read
+     - Host records within DNS zones
+   * - ``dns/reverse_zone``
+     - ``ptr_record``
+     - read
+     - Pointer records for reverse lookup
+   * - ``shares/share``
+     - ``host``
+     - read
+     - Share location and access
+   * - ``nagios/service``
+     - ``host``
+     - read
+     - Monitoring service targets
+   * - ``mail/folder``
+     - ``domain``
+     - read
+     - Mail folder domain association
+   * - ``printer``
+     - ``host``
+     - read
+     - Printer host connection
+   * - ``settings/directory``
+     - ``policies``
      - read
      - Directory policy references
-   * - settings/directory
-     - dns
+   * - ``settings/directory``
+     - ``dns``
      - read
      - Directory DNS references
-   * - settings/directory
-     - dhcp
+   * - ``settings/directory``
+     - ``dhcp``
      - read
      - Directory DHCP references
-   * - settings/directory
-     - users
+   * - ``settings/directory``
+     - ``users``
      - read
      - Directory user container references
-   * - settings/directory
-     - groups
+   * - ``settings/directory``
+     - ``groups``
      - read
      - Directory group container references
-   * - settings/directory
-     - computers
+   * - ``settings/directory``
+     - ``computers``
      - read
      - Directory computer container references
-   * - policies/*
-     - users/user
+   * - ``policies/*``
+     - ``users/user``
      - read
      - Policy application to users
-   * - policies/*
-     - groups/group
+   * - ``policies/*``
+     - ``groups/group``
      - read
      - Policy application to groups
-   * - policies/*
-     - computers/*
+   * - ``policies/*``
+     - ``computers/*``
      - read
      - Policy application to computers
-   * - policies/*
-     - container/ou
+   * - ``policies/*``
+     - ``container/ou``
      - read
      - Policy application to organizational units
-   * - dhcp/subnet
-     - networks/network
+   * - ``dhcp/subnet``
+     - ``networks/network``
      - read
      - DHCP subnet network association
-   * - dns/alias
-     - dns/host_record
+   * - ``dns/alias``
+     - ``dns/host_record``
      - read
      - DNS alias to host record mapping
-   * - dns/srv_record
-     - dns/host_record
+   * - ``dns/srv_record``
+     - ``dns/host_record``
      - read
      - DNS service record target reference
-   * - dns/mx_record
-     - dns/host_record
+   * - ``dns/mx_record``
+     - ``dns/host_record``
      - read
      - Mail exchange record target reference
 
@@ -185,7 +185,7 @@ When creating objects, the following permissions are typically required:
 
 - **Write** permission on the primary object type
 - **Read** permission on all referenced object types
-- **Search** permission on referenced object types (for dropdown population)
+- **Search** permission on referenced object types (for drop-down population)
 - **Read** permission on container objects in the target location
 
 Modify operations
@@ -260,7 +260,7 @@ The ``udm:default-roles:linux-ou-client-manager`` role manages Linux computers a
 
 Without these dependency permissions:
 
-- Network dropdowns would be empty
+- Network drop-downs would be empty
 - DNS configuration options would not be available
 - Computer group assignments would fail
 - Placement in organizational units might not work properly
