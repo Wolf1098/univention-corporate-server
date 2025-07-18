@@ -4,11 +4,11 @@
 
 .. _da-object-dependencies:
 
-*************************
-UCS Object Dependencies
-*************************
+*******************
+Object Dependencies
+*******************
 
-This section documents the dependencies between UCS/LDAP objects and the minimal permissions required to make these relationships functional.
+This section documents the dependencies between UDM objects and the minimal permissions required to make these relationships functional.
 Understanding these dependencies is crucial when creating or modifying UDM roles, where object permissions alone are insufficient unless related object types are also accessible.
 
 .. note::
@@ -17,9 +17,9 @@ Understanding these dependencies is crucial when creating or modifying UDM roles
    These dependencies are often not explicitly documented, which leads to roles being incomplete or functionally limited despite appearing correct.
 
 Object reference patterns
-==========================
+=========================
 
-UCS uses several mechanisms to establish references between objects:
+UDM uses several mechanisms to establish references between objects:
 
 #. **Direct DN References**: Properties that store DNs of other objects (e.g., ``primaryGroup``, ``groups``)
 #. **Syntax-Based References**: Properties using UDM syntax classes like ``GroupDN``, ``UserDN``, ``UDM_Objects``
@@ -28,7 +28,7 @@ UCS uses several mechanisms to establish references between objects:
 Object reference map
 ====================
 
-The following table lists all LDAP/UCS object types that hold references to other object types, along with the minimal permissions required on the referenced objects to make the relations usable.
+The following table lists all UDM object types that hold references to other object types, along with the minimal permissions required on the referenced objects to make the relations usable.
 
 .. note::
 
@@ -207,7 +207,7 @@ When searching and displaying objects:
 - May require **search** permission on referenced types for proper filtering
 
 Examples: Current UDM roles and their dependencies
-=================================================
+==================================================
 
 The following examples illustrate how object dependencies affect the default UDM roles defined in the system.
 
