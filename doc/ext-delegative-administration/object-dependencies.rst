@@ -195,7 +195,7 @@ When modifying objects that change references:
 
 - **Modify** permission on the primary object
 - **Read** permission on newly referenced objects
-- **Search** permission for dropdown/selection widgets
+- **Search** permission for drop-down/selection widgets
 
 Search operations
 -----------------
