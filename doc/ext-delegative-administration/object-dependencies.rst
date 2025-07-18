@@ -46,134 +46,79 @@ The following table lists all UDM object types that hold references to other obj
      - Refers To
      - Required Permission
      - Description
-   * - ``computer``
-     - ``network``
+   * - ``users/user``
+     - ``groups/group``
      - read
-     - Needed to select a network during creation/modification
-   * - ``computer``
-     - ``dnsEntry``
-     - read
-     - DNS configuration for clients
-   * - ``computer``
-     - ``dhcpEntry``
-     - read
-     - DHCP configuration for clients
-   * - ``user``
-     - ``groups``
-     - read
-     - To assign user to groups
-   * - ``user``
-     - ``primaryGroup``
-     - read
-     - Primary group assignment
-   * - ``user``
+     - To assign user to groups and for primary group assignment
+   * - ``users/user``
      - ``mail/domain``
      - read
      - Email domain assignment and configuration
-   * - ``user``
-     - ``user``
+   * - ``users/user``
+     - ``users/user``
      - read
      - Secretary and delegation relationships
-   * - ``group``
-     - ``users``
+   * - ``users/user``
+     - ``policies/*``
+     - read
+     - Policy application to users
+   * - ``groups/group``
+     - ``users/user``
      - read
      - Required for managing group memberships
-   * - ``group``
-     - ``nestedGroups``
+   * - ``groups/group``
+     - ``computers/*``
      - read
-     - Group hierarchy management
-   * - ``school``
-     - ``location/address``
+     - Required for managing group memberships
+   * - ``groups/group``
+     - ``groups/group``
      - read
-     - Address data visibility
-   * - ``host``
-     - ``policies``
+     - Group hierarchy management (nested groups)
+   * - ``groups/group``
+     - ``policies/*``
+     - read
+     - Policy application to groups
+   * - ``computers/*``
+     - ``networks/network``
+     - read
+     - Needed to select a network during creation/modification
+   * - ``computers/*``
+     - ``dns/*``
+     - read
+     - DNS configuration for clients
+   * - ``computers/*``
+     - ``dhcp/*``
+     - read
+     - DHCP configuration for clients
+   * - ``computers/*``
+     - ``policies/*``
      - read
      - Policy application overview
-   * - ``container/ou``
-     - ``defaultGroup``
-     - read
-     - Default group settings for organizational units
-   * - ``dns/forward_zone``
-     - ``host_record``
-     - read
-     - Host records within DNS zones
-   * - ``dns/reverse_zone``
-     - ``ptr_record``
-     - read
-     - Pointer records for reverse lookup
    * - ``shares/share``
-     - ``host``
+     - ``computers/*``
      - read
      - Share location and access
    * - ``nagios/service``
-     - ``host``
+     - ``computers/*``
      - read
      - Monitoring service targets
    * - ``mail/folder``
-     - ``domain``
+     - ``mail/domain``
      - read
      - Mail folder domain association
-   * - ``printer``
-     - ``host``
-     - read
-     - Printer host connection
-   * - ``settings/directory``
-     - ``policies``
-     - read
-     - Directory policy references
-   * - ``settings/directory``
-     - ``dns``
-     - read
-     - Directory DNS references
-   * - ``settings/directory``
-     - ``dhcp``
-     - read
-     - Directory DHCP references
-   * - ``settings/directory``
-     - ``users``
-     - read
-     - Directory user container references
-   * - ``settings/directory``
-     - ``groups``
-     - read
-     - Directory group container references
-   * - ``settings/directory``
-     - ``computers``
-     - read
-     - Directory computer container references
-   * - ``policies/*``
-     - ``users/user``
-     - read
-     - Policy application to users
-   * - ``policies/*``
-     - ``groups/group``
-     - read
-     - Policy application to groups
-   * - ``policies/*``
+   * - ``shares/printer``
      - ``computers/*``
      - read
-     - Policy application to computers
-   * - ``policies/*``
-     - ``container/ou``
+     - Printer host connection
+   * - ``container/ou``
+     - ``policies/*``
      - read
      - Policy application to organizational units
-   * - ``dhcp/subnet``
-     - ``networks/network``
+   * - ``container/cn``
+     - ``policies/*``
      - read
-     - DHCP subnet network association
-   * - ``dns/alias``
-     - ``dns/host_record``
-     - read
-     - DNS alias to host record mapping
-   * - ``dns/srv_record``
-     - ``dns/host_record``
-     - read
-     - DNS service record target reference
-   * - ``dns/mx_record``
-     - ``dns/host_record``
-     - read
-     - Mail exchange record target reference
+     - Policy application to organizational units
+
 
 Permission requirements by operation type
 =========================================
