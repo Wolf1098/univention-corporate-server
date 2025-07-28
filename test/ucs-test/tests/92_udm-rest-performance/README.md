@@ -28,14 +28,12 @@ The original comprehensive test has been split into smaller, focused tests that 
 
 - **`03_user_search.py`** - User search performance tests
   - Search all users
-  - Search with limits and pagination
   - Filtered searches by username patterns
   - Search by lastname, email, and other attributes
   - Recently created and disabled user searches
 
 - **`04_group_search.py`** - Group search performance tests
   - Search all groups
-  - Search with limits and pagination
   - Filtered searches by group name patterns
   - Security and distribution group searches
   - Groups with members and recent groups
@@ -228,7 +226,7 @@ When using `run_all_tests.sh`:
 
 - Run tests individually to isolate issues
 - Check UCS system logs during test execution
-- Verify REST API service status
+- Verify UDM REST API service status
 - Monitor LDAP backend performance
 
 ## Integration

@@ -5,7 +5,7 @@
 ## tags: [producttest, SKIP]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
 ## env:
-##   LOCUST_SPAWN_RATE: "20"
+##   LOCUST_SPAWN_RATE: "0.1"
 ##   LOCUST_RUN_TIME: "2m"
 ##   LOCUST_USERS: "20"
 ##   LOCUST_USER_CLASSES: UserCreationTest
@@ -13,21 +13,19 @@
 ##   WAIT_MAX: "0"
 ##   TIMEOUT: "300"
 
-from locust import HttpUser, between, task
-from rest_utils import (
-    UDMRestClient, UDMTestDataGenerator, add_created_user, get_config, get_ldap_containers, setup_logging,
-)
+from locust import FastHttpUser, between, events, task
+from rest_utils import UDMRestClient, UDMTestDataGenerator, get_config, get_ldap_containers, setup_logging
 
 
 # Configuration
-WAIT_MIN = get_config('WAIT_MIN', 1)
-WAIT_MAX = get_config('WAIT_MAX', 3)
+WAIT_MIN = get_config('WAIT_MIN', 0)
+WAIT_MAX = get_config('WAIT_MAX', 0)
 
 # Setup logging
 log = setup_logging()
 
 
-class UserCreationTest(HttpUser):
+class UserCreationTest(FastHttpUser):
     wait_time = between(WAIT_MIN, WAIT_MAX)
 
     def __init__(self, *args, **kwargs):
@@ -54,15 +52,14 @@ class UserCreationTest(HttpUser):
         """Create a new user."""
         user_data = self.data_generator.next_user_data(password='Univention.123')
 
-        success, user_dn = self.udm_client.create_user(
+        success, _user_dn = self.udm_client.create_user(
             username=user_data['username'],
             lastname=user_data['lastname'],
             password=user_data['password'],
             description=user_data['description'],
         )
-
-        if success and user_dn:
-            add_created_user(user_dn)
+        if not success:
+            raise Exception(f'Failed to create user: {user_data["username"]}')
 
     @task(2)
     def create_bulk_users(self):
@@ -70,15 +67,22 @@ class UserCreationTest(HttpUser):
         for i in range(3):
             user_data = self.data_generator.next_user_data(password='Univention.123')
 
-            success, user_dn = self.udm_client.create_user(
+            success, _user_dn = self.udm_client.create_user(
                 username=user_data['username'],
                 lastname=user_data['lastname'],
                 password=user_data['password'],
                 description=f'Bulk user {i + 1} - {user_data["description"]}',
             )
+            if not success:
+                raise Exception(f'Failed to create user: {user_data["username"]}')
 
-            if success and user_dn:
-                add_created_user(user_dn)
+
+@events.request.add_listener
+def on_request(request_type, name, response_time, response_length, exception, context, **kwargs):
+    # Check if the request is the first one using context
+    if context.get("is_first_request", True):
+        context["is_first_request"] = False
+        return  # Returning None prevents the request from being logged
 
 
 if __name__ == '__main__':

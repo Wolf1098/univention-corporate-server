@@ -6,7 +6,7 @@
 
 # Configuration
 HOST="${UCS_HOST:-https://master.ucs.test}"
-SPAWN_RATE="${LOCUST_SPAWN_RATE:-5}"
+SPAWN_RATE="${LOCUST_SPAWN_RATE:-1}"
 USERS="${LOCUST_USERS:-20}"
 RUN_TIME="${LOCUST_RUN_TIME:-2m}"
 OUTPUT_DIR="${OUTPUT_DIR:-./results}"

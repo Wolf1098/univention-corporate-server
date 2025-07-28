@@ -5,7 +5,7 @@
 ## tags: [producttest, SKIP]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
 ## env:
-##   LOCUST_SPAWN_RATE: "20"
+##   LOCUST_SPAWN_RATE: "0.1"
 ##   LOCUST_RUN_TIME: "2m"
 ##   LOCUST_USERS: "20"
 ##   LOCUST_USER_CLASSES: ObjectModificationTest
@@ -16,10 +16,10 @@
 import random
 import time
 
-from locust import HttpUser, between, task
+from locust import FastHttpUser, between, events, task
 from rest_utils import (
-    UDMRestClient, UDMTestDataGenerator, add_created_group, add_created_user, get_config, get_ldap_containers,
-    get_random_created_group, get_random_created_user, setup_logging,
+    UDMRestClient, UDMTestDataGenerator, get_config, get_ldap_containers, get_random_created_group,
+    get_random_created_user, setup_logging,
 )
 
 
@@ -31,7 +31,7 @@ WAIT_MAX = get_config('WAIT_MAX', 3)
 log = setup_logging()
 
 
-class ObjectModificationTest(HttpUser):
+class ObjectModificationTest(FastHttpUser):
     wait_time = between(WAIT_MIN, WAIT_MAX)
 
     def __init__(self, *args, **kwargs):
@@ -61,24 +61,24 @@ class ObjectModificationTest(HttpUser):
         # Create a few users
         for i in range(3):
             user_data = self.data_generator.next_user_data(password='Univention.123')
-            success, user_dn = self.udm_client.create_user(
+            success, _user_dn = self.udm_client.create_user(
                 username=user_data['username'],
                 lastname=user_data['lastname'],
                 password=user_data['password'],
                 description='Initial user for modification tests',
             )
-            if success and user_dn:
-                add_created_user(user_dn)
+            if not success:
+                log.error(f'Failed to create user {user_data["username"]}')
 
         # Create a few groups
         for i in range(3):
             group_data = self.data_generator.next_group_data()
-            success, group_dn = self.udm_client.create_group(
+            success, _group_dn = self.udm_client.create_group(
                 groupname=group_data['name'],
                 description='Initial group for modification tests',
             )
-            if success and group_dn:
-                add_created_group(group_dn)
+            if not success:
+                log.error(f'Failed to create group {group_data["name"]}')
 
     @task(15)
     def modify_user_description(self):
@@ -96,8 +96,8 @@ class ObjectModificationTest(HttpUser):
                 name='modify_user_description',
             )
 
-            if success:
-                log.debug(f'Modified user description: {user_dn}')
+            if not success:
+                raise Exception(f'Failed to modify user description: {user_dn}')
 
     @task(15)
     def modify_group_description(self):
@@ -115,8 +115,8 @@ class ObjectModificationTest(HttpUser):
                 name='modify_group_description',
             )
 
-            if success:
-                log.debug(f'Modified group description: {group_dn}')
+            if not success:
+                raise Exception(f'Failed to modify group description: {group_dn}')
 
     @task(10)
     def modify_user_email(self):
@@ -135,8 +135,8 @@ class ObjectModificationTest(HttpUser):
                 name='modify_user_email',
             )
 
-            if success:
-                log.debug(f'Modified user email: {user_dn}')
+            if not success:
+                raise Exception(f'Failed to modify user email: {user_dn}')
 
     @task(8)
     def modify_user_firstname(self):
@@ -155,8 +155,8 @@ class ObjectModificationTest(HttpUser):
                 name='modify_user_firstname',
             )
 
-            if success:
-                log.debug(f'Modified user firstname: {user_dn}')
+            if not success:
+                raise Exception(f'Failed to modify user firstname: {user_dn}')
 
     @task(6)
     def modify_user_multiple_fields(self):
@@ -177,8 +177,8 @@ class ObjectModificationTest(HttpUser):
                 name='modify_user_multiple_fields',
             )
 
-            if success:
-                log.debug(f'Modified multiple user fields: {user_dn}')
+            if not success:
+                raise Exception(f'Failed to modify user multiple fields: {user_dn}')
 
     @task(5)
     def modify_group_multiple_fields(self):
@@ -197,8 +197,8 @@ class ObjectModificationTest(HttpUser):
                 name='modify_group_multiple_fields',
             )
 
-            if success:
-                log.debug(f'Modified multiple group fields: {group_dn}')
+            if not success:
+                raise Exception(f'Failed to modify group multiple fields: {group_dn}')
 
     @task(4)
     def modify_user_phone(self):
@@ -217,8 +217,8 @@ class ObjectModificationTest(HttpUser):
                 name='modify_user_phone',
             )
 
-            if success:
-                log.debug(f'Modified user phone: {user_dn}')
+            if not success:
+                raise Exception(f'Failed to modify user phone: {user_dn}')
 
     @task(3)
     def modify_user_lastname(self):
@@ -237,8 +237,8 @@ class ObjectModificationTest(HttpUser):
                 name='modify_user_lastname',
             )
 
-            if success:
-                log.debug(f'Modified user lastname: {user_dn}')
+            if not success:
+                raise Exception(f'Failed to modify user lastname: {user_dn}')
 
     @task(2)
     def modify_user_sequential(self):
@@ -257,11 +257,8 @@ class ObjectModificationTest(HttpUser):
                     name='modify_user_sequential',
                 )
 
-                if success:
-                    log.debug(f'Sequential user modification {i + 1}/3: {user_dn}')
-
-                # Small delay between modifications
-                time.sleep(0.1)
+                if not success:
+                    raise Exception(f'Failed to modify user sequentially: {user_dn}')
 
     @task(2)
     def modify_group_sequential(self):
@@ -280,11 +277,8 @@ class ObjectModificationTest(HttpUser):
                     name='modify_group_sequential',
                 )
 
-                if success:
-                    log.debug(f'Sequential group modification {i + 1}/3: {group_dn}')
-
-                # Small delay between modifications
-                time.sleep(0.1)
+                if not success:
+                    raise Exception(f'Failed to modify group sequentially: {group_dn}')
 
     @task(1)
     def modify_nonexistent_object(self):
@@ -304,6 +298,14 @@ class ObjectModificationTest(HttpUser):
         # This should fail gracefully
         if not success:
             log.debug(f'Correctly handled modification of non-existent object: {fake_dn}')
+
+
+@events.request.add_listener
+def on_request(request_type, name, response_time, response_length, exception, context, **kwargs):
+    # Check if the request is the first one using context
+    if context.get("is_first_request", True):
+        context["is_first_request"] = False
+        return  # Returning None prevents the request from being logged
 
 
 if __name__ == '__main__':

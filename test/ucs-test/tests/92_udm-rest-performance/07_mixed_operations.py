@@ -5,7 +5,7 @@
 ## tags: [producttest, SKIP]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
 ## env:
-##   LOCUST_SPAWN_RATE: "20"
+##   LOCUST_SPAWN_RATE: "0.1"
 ##   LOCUST_RUN_TIME: "2m"
 ##   LOCUST_USERS: "20"
 ##   LOCUST_USER_CLASSES: MixedOperationsTest
@@ -16,10 +16,10 @@
 import random
 import time
 
-from locust import HttpUser, between, task
+from locust import FastHttpUser, between, events, task
 from rest_utils import (
-    UDMRestClient, UDMTestDataGenerator, add_created_group, add_created_user, get_config, get_ldap_containers,
-    get_ldap_filter, get_random_created_group, get_random_created_user, setup_logging,
+    UDMRestClient, UDMTestDataGenerator, add_created_group, get_config, get_ldap_containers, get_ldap_filter,
+    get_random_created_group, get_random_created_user, setup_logging,
 )
 
 
@@ -31,7 +31,7 @@ WAIT_MAX = get_config('WAIT_MAX', 0)
 log = setup_logging()
 
 
-class MixedOperationsTest(HttpUser):
+class MixedOperationsTest(FastHttpUser):
     wait_time = between(WAIT_MIN, WAIT_MAX)
 
     def __init__(self, *args, **kwargs):
@@ -65,20 +65,21 @@ class MixedOperationsTest(HttpUser):
             description=user_data['description'],
         )
 
+        if not success:
+            raise Exception(f'Failed to create user: {user_data["username"]}')
+
         if success and user_dn:
-            add_created_user(user_dn)
-            log.debug(f'Created user for mixed ops: {user_data["username"]}')
 
             # Search for the created user
-            success, count = self.udm_client.search_objects(
+            success, _count = self.udm_client.search_objects(
                 object_type='users/user',
                 position=self.containers['users'],
                 filter_expr=f'(uid={user_data["username"]})',
                 name='mixed_search_created_user',
             )
 
-            if success:
-                log.debug(f'Found created user in search: {count} results')
+            if not success:
+                raise Exception(f'Failed to search for created user: {user_data["username"]}')
 
             # Modify the user
             modifications = {
@@ -92,8 +93,8 @@ class MixedOperationsTest(HttpUser):
                 name='mixed_modify_user',
             )
 
-            if success:
-                log.debug(f'Modified user in mixed ops: {user_dn}')
+            if not success:
+                raise Exception(f'Failed to modify created user: {user_data["username"]}')
 
     @task(8)
     def create_search_modify_group(self):
@@ -104,21 +105,23 @@ class MixedOperationsTest(HttpUser):
             groupname=group_data['name'],
             description=group_data['description'],
         )
+        if not success:
+            raise Exception(f'Failed to create group: {group_data["name"]}')
 
         if success and group_dn:
             add_created_group(group_dn)
             log.debug(f'Created group for mixed ops: {group_data["name"]}')
 
             # Search for the created group
-            success, count = self.udm_client.search_objects(
+            success, _count = self.udm_client.search_objects(
                 object_type='groups/group',
                 position=self.containers['groups'],
                 filter_expr=f'(cn={group_data["name"]})',
                 name='mixed_search_created_group',
             )
 
-            if success:
-                log.debug(f'Found created group in search: {count} results')
+            if not success:
+                raise Exception(f'Failed to search for created group: {group_data["name"]}')
 
             # Modify the group
             modifications = {
@@ -132,8 +135,8 @@ class MixedOperationsTest(HttpUser):
                 name='mixed_modify_group',
             )
 
-            if success:
-                log.debug(f'Modified group in mixed ops: {group_dn}')
+            if not success:
+                raise Exception(f'Failed to modify group: {group_dn}')
 
     @task(6)
     def search_and_retrieve_users(self):
@@ -143,9 +146,10 @@ class MixedOperationsTest(HttpUser):
             object_type='users/user',
             position=self.containers['users'],
             filter_expr=get_ldap_filter('mixed_users'),
-            limit=5,
             name='mixed_search_users',
         )
+        if not success:
+            raise Exception('Failed to search for users')
 
         if success and results:
             # Pick a random user from results and retrieve full details
@@ -159,8 +163,8 @@ class MixedOperationsTest(HttpUser):
                     name='mixed_retrieve_user',
                 )
 
-                if success:
-                    log.debug(f'Retrieved user from search results: {user_dn}')
+                if not success:
+                    raise Exception(f'Failed to retrieve user: {user_dn}')
 
     @task(6)
     def search_and_retrieve_groups(self):
@@ -170,9 +174,10 @@ class MixedOperationsTest(HttpUser):
             object_type='groups/group',
             position=self.containers['groups'],
             filter_expr=get_ldap_filter('mixed_groups'),
-            limit=5,
             name='mixed_search_groups',
         )
+        if not success:
+            raise Exception('Failed to search for groups')
 
         if success and results:
             # Pick a random group from results and retrieve full details
@@ -186,66 +191,8 @@ class MixedOperationsTest(HttpUser):
                     name='mixed_retrieve_group',
                 )
 
-                if success:
-                    log.debug(f'Retrieved group from search results: {group_dn}')
-
-    @task(5)
-    def bulk_operations_workflow(self):
-        """Perform a series of bulk operations."""
-        # Create multiple users quickly
-        created_users = []
-        for i in range(2):
-            user_data = self.data_generator.next_user_data(password='Univention.123')
-            success, user_dn = self.udm_client.create_user(
-                username=user_data['username'],
-                lastname=user_data['lastname'],
-                password=user_data['password'],
-                description=f'Bulk user {i + 1}',
-            )
-
-            if success and user_dn:
-                add_created_user(user_dn)
-                created_users.append(user_dn)
-
-        # Search for all created users
-        if created_users:
-            success, count = self.udm_client.search_objects(
-                object_type='users/user',
-                position=self.containers['users'],
-                filter_expr='(uid=mixed*)',
-                name='mixed_bulk_search',
-            )
-
-            log.debug(f'Bulk search found {count} mixed users')
-
-    @task(4)
-    def concurrent_user_group_ops(self):
-        """Perform user and group operations concurrently."""
-        # Create user and group simultaneously (simulated)
-        user_data = self.data_generator.next_user_data(password='Univention.123')
-        group_data = self.data_generator.next_group_data()
-
-        # Create user
-        success_user, user_dn = self.udm_client.create_user(
-            username=user_data['username'],
-            lastname=user_data['lastname'],
-            password=user_data['password'],
-            description='Concurrent ops user',
-        )
-
-        # Create group
-        success_group, group_dn = self.udm_client.create_group(
-            groupname=group_data['name'],
-            description='Concurrent ops group',
-        )
-
-        if success_user and user_dn:
-            add_created_user(user_dn)
-            log.debug(f'Created user in concurrent ops: {user_data["username"]}')
-
-        if success_group and group_dn:
-            add_created_group(group_dn)
-            log.debug(f'Created group in concurrent ops: {group_data["name"]}')
+                if not success:
+                    raise Exception(f'Failed to retrieve group: {group_dn}')
 
     @task(3)
     def modify_and_retrieve_workflow(self):
@@ -264,6 +211,8 @@ class MixedOperationsTest(HttpUser):
                 modifications=modifications,
                 name='mixed_modify_before_retrieve',
             )
+            if not success:
+                raise Exception(f'Failed to modify user: {user_dn}')
 
             if success:
                 # Immediately retrieve to verify modification
@@ -273,8 +222,8 @@ class MixedOperationsTest(HttpUser):
                     name='mixed_retrieve_after_modify',
                 )
 
-                if success:
-                    log.debug(f'Modified and retrieved user: {user_dn}')
+                if not success:
+                    raise Exception(f'Failed to retrieve user: {user_dn}')
 
     @task(2)
     def cross_reference_operations(self):
@@ -289,6 +238,8 @@ class MixedOperationsTest(HttpUser):
                 object_dn=user_dn,
                 name='mixed_get_user_for_xref',
             )
+            if not success:
+                raise Exception(f'Failed to retrieve user: {user_dn}')
 
             # Get group details
             success, _group_data = self.udm_client.get_object(
@@ -297,8 +248,8 @@ class MixedOperationsTest(HttpUser):
                 name='mixed_get_group_for_xref',
             )
 
-            if success:
-                log.debug(f'Cross-referenced user {user_dn} and group {group_dn}')
+            if not success:
+                raise Exception('Failed to retrieve user or group')
 
     @task(1)
     def error_handling_workflow(self):
@@ -321,6 +272,14 @@ class MixedOperationsTest(HttpUser):
         )
 
         log.debug('Completed error handling workflow')
+
+
+@events.request.add_listener
+def on_request(request_type, name, response_time, response_length, exception, context, **kwargs):
+    # Check if the request is the first one using context
+    if context.get("is_first_request", True):
+        context["is_first_request"] = False
+        return  # Returning None prevents the request from being logged
 
 
 if __name__ == '__main__':

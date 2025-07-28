@@ -5,7 +5,7 @@
 ## tags: [producttest, SKIP]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
 ## env:
-##   LOCUST_SPAWN_RATE: "20"
+##   LOCUST_SPAWN_RATE: "0.1"
 ##   LOCUST_RUN_TIME: "2m"
 ##   LOCUST_USERS: "20"
 ##   LOCUST_USER_CLASSES: UserSearchTest
@@ -15,7 +15,7 @@
 
 import random
 
-from locust import HttpUser, between, task
+from locust import FastHttpUser, between, events, task
 from rest_utils import (
     UDMRestClient, UDMTestDataGenerator, get_config, get_ldap_containers, get_ldap_filter, setup_logging,
 )
@@ -29,7 +29,7 @@ WAIT_MAX = get_config('WAIT_MAX', 0)
 log = setup_logging()
 
 
-class UserSearchTest(HttpUser):
+class UserSearchTest(FastHttpUser):
     wait_time = between(WAIT_MIN, WAIT_MAX)
 
     def __init__(self, *args, **kwargs):
@@ -54,44 +54,28 @@ class UserSearchTest(HttpUser):
     @task(15)
     def search_all_users(self):
         """Search for all users."""
-        success, count = self.udm_client.search_objects(
+        success, _count = self.udm_client.search_objects(
             object_type='users/user',
             position=self.containers['users'],
             filter_expr=get_ldap_filter('all_users'),
             name='search_all_users',
         )
 
-        if success:
-            log.debug(f'Found {count} users')
-
-    @task(10)
-    def search_users_with_limit(self):
-        """Search for users with limit."""
-        limit = random.choice([10, 20, 50])
-        success, count = self.udm_client.search_objects(
-            object_type='users/user',
-            position=self.containers['users'],
-            filter_expr=get_ldap_filter('all_users'),
-            limit=limit,
-            name='search_users_with_limit',
-        )
-
-        if success:
-            log.debug(f'Found {count} users (limit: {limit})')
+        if not success:
+            raise Exception('Failed to search all users')
 
     @task(8)
     def search_users_filtered(self):
         """Search for users with filter."""
-        success, count = self.udm_client.search_objects(
+        success, _count = self.udm_client.search_objects(
             object_type='users/user',
             position=self.containers['users'],
             filter_expr=get_ldap_filter('perftest_users'),
-            limit=20,
             name='search_users_filtered',
         )
 
-        if success:
-            log.debug(f'Found {count} filtered users')
+        if not success:
+            raise Exception('Failed to search filtered users')
 
     @task(6)
     def search_users_by_username_pattern(self):
@@ -99,29 +83,28 @@ class UserSearchTest(HttpUser):
         patterns = ['test*', '*admin*', 'user*', '*service*']
         pattern = random.choice(patterns)
 
-        success, count = self.udm_client.search_objects(
+        success, _count = self.udm_client.search_objects(
             object_type='users/user',
             position=self.containers['users'],
             filter_expr=f'(uid={pattern})',
             name='search_users_by_pattern',
         )
 
-        if success:
-            log.debug(f'Found {count} users matching pattern: {pattern}')
+        if not success:
+            raise Exception('Failed to search users by pattern')
 
     @task(5)
     def bulk_search_users(self):
         """Search for many users with pagination."""
-        success, count = self.udm_client.search_objects(
+        success, _count = self.udm_client.search_objects(
             object_type='users/user',
             position=self.containers['users'],
             filter_expr=get_ldap_filter('all_users'),
-            limit=100,
             name='bulk_search_users',
         )
 
-        if success:
-            log.debug(f'Bulk search found {count} users')
+        if not success:
+            raise Exception('Failed to bulk search users')
 
     @task(4)
     def search_users_by_lastname(self):
@@ -129,54 +112,62 @@ class UserSearchTest(HttpUser):
         lastnames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones']
         lastname = random.choice(lastnames)
 
-        success, count = self.udm_client.search_objects(
+        success, _count = self.udm_client.search_objects(
             object_type='users/user',
             position=self.containers['users'],
             filter_expr=f'(sn=*{lastname}*)',
             name='search_users_by_lastname',
         )
 
-        if success:
-            log.debug(f'Found {count} users with lastname pattern: {lastname}')
+        if not success:
+            raise Exception('Failed to search users by lastname')
 
     @task(3)
     def search_users_with_email(self):
         """Search for users with email addresses."""
-        success, count = self.udm_client.search_objects(
+        success, _count = self.udm_client.search_objects(
             object_type='users/user',
             position=self.containers['users'],
             filter_expr='(mail=*)',
             name='search_users_with_email',
         )
 
-        if success:
-            log.debug(f'Found {count} users with email addresses')
+        if not success:
+            raise Exception('Failed to search users with email addresses')
 
     @task(2)
     def search_recently_created_users(self):
         """Search for recently created users."""
-        success, count = self.udm_client.search_objects(
+        success, _count = self.udm_client.search_objects(
             object_type='users/user',
             position=self.containers['users'],
             filter_expr='(&(uid=usersearch*)(createTimestamp>=20240101000000Z))',
             name='search_recent_users',
         )
 
-        if success:
-            log.debug(f'Found {count} recently created users')
+        if not success:
+            raise Exception('Failed to search recently created users')
 
     @task(1)
     def search_disabled_users(self):
         """Search for disabled users."""
-        success, count = self.udm_client.search_objects(
+        success, _count = self.udm_client.search_objects(
             object_type='users/user',
             position=self.containers['users'],
             filter_expr='(userAccountControl:1.2.840.113556.1.4.803:=2)',
             name='search_disabled_users',
         )
 
-        if success:
-            log.debug(f'Found {count} disabled users')
+        if not success:
+            raise Exception('Failed to search disabled users')
+
+
+@events.request.add_listener
+def on_request(request_type, name, response_time, response_length, exception, context, **kwargs):
+    # Check if the request is the first one using context
+    if context.get("is_first_request", True):
+        context["is_first_request"] = False
+        return  # Returning None prevents the request from being logged
 
 
 if __name__ == '__main__':

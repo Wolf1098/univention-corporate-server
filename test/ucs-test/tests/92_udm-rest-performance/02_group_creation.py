@@ -5,7 +5,7 @@
 ## tags: [producttest, SKIP]
 ## roles: [domaincontroller_master,domaincontroller_backup,domaincontroller_slave,memberserver]
 ## env:
-##   LOCUST_SPAWN_RATE: "20"
+##   LOCUST_SPAWN_RATE: "0.1"
 ##   LOCUST_RUN_TIME: "2m"
 ##   LOCUST_USERS: "20"
 ##   LOCUST_USER_CLASSES: GroupCreationTest
@@ -13,21 +13,19 @@
 ##   WAIT_MAX: "0"
 ##   TIMEOUT: "300"
 
-from locust import HttpUser, between, task
-from rest_utils import (
-    UDMRestClient, UDMTestDataGenerator, add_created_group, get_config, get_ldap_containers, setup_logging,
-)
+from locust import FastHttpUser, between, events, task
+from rest_utils import UDMRestClient, UDMTestDataGenerator, get_config, get_ldap_containers, setup_logging
 
 
 # Configuration
-WAIT_MIN = get_config('WAIT_MIN', 1)
-WAIT_MAX = get_config('WAIT_MAX', 3)
+WAIT_MIN = get_config('WAIT_MIN', 0)
+WAIT_MAX = get_config('WAIT_MAX', 0)
 
 # Setup logging
 log = setup_logging()
 
 
-class GroupCreationTest(HttpUser):
+class GroupCreationTest(FastHttpUser):
     wait_time = between(WAIT_MIN, WAIT_MAX)
 
     def __init__(self, *args, **kwargs):
@@ -54,14 +52,12 @@ class GroupCreationTest(HttpUser):
         """Create a new group."""
         group_data = self.data_generator.next_group_data()
 
-        success, group_dn = self.udm_client.create_group(
+        success, _group_dn = self.udm_client.create_group(
             groupname=group_data['name'],
             description=group_data['description'],
         )
-
-        if success and group_dn:
-            add_created_group(group_dn)
-            log.info(f'Created group: {group_data["name"]}')
+        if not success:
+            raise Exception(f'Failed to create group {group_data["name"]}')
 
     @task(2)
     def create_bulk_groups(self):
@@ -69,14 +65,20 @@ class GroupCreationTest(HttpUser):
         for i in range(3):
             group_data = self.data_generator.next_group_data()
 
-            success, group_dn = self.udm_client.create_group(
+            success, _group_dn = self.udm_client.create_group(
                 groupname=group_data['name'],
                 description=f'Bulk group {i + 1} - {group_data["description"]}',
             )
+            if not success:
+                raise Exception(f'Failed to create bulk group {i + 1}: {group_data["name"]}')
 
-            if success and group_dn:
-                add_created_group(group_dn)
-                log.debug(f'Created bulk group {i + 1}: {group_data["name"]}')
+
+@events.request.add_listener
+def on_request(request_type, name, response_time, response_length, exception, context, **kwargs):
+    # Check if the request is the first one using context
+    if context.get("is_first_request", True):
+        context["is_first_request"] = False
+        return  # Returning None prevents the request from being logged
 
 
 if __name__ == '__main__':

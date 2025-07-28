@@ -3,7 +3,7 @@
 Common utilities for UDM REST API performance tests.
 
 This module provides shared functionality for authentication, request handling,
-data generation, and cleanup operations used across multiple UDM REST performance tests.
+data generation, and cleanup operations used across multiple UDM REST API performance tests.
 """
 
 import base64
@@ -31,9 +31,7 @@ DEFAULT_CONFIG = {
 }
 
 # UDM REST API paths
-UDM_BASE_PATH = '/univention/udm/'
-SAML_ENTRY = '/univention/saml/'
-SESSION_COOKIE_NAME = 'UMCSessionId'
+UDM_BASE_PATH = '/univention/udm'
 
 
 # LDAP containers
@@ -100,12 +98,11 @@ class UDMRestAuthenticator:
         self.username = username
         self.password = password
         self.auth_header = None
-        self.session_id = None
         self.setup_basic_auth()
 
     def setup_basic_auth(self) -> None:
         """Setup basic authentication header."""
-        credentials = base64.b64encode(f'{self.username}:{self.password}'.encode()).decode()
+        credentials = base64.b64encode(f'{self.username}:{self.password}'.encode('ISO8859-1')).decode('ASCII')
         self.auth_header = f'Basic {credentials}'
 
     def get_auth_headers(self) -> dict[str, str]:
@@ -117,9 +114,6 @@ class UDMRestAuthenticator:
 
         if self.auth_header:
             headers['Authorization'] = self.auth_header
-
-        if self.session_id:
-            headers['X-XSRF-Protection'] = self.session_id
 
         return headers
 
@@ -172,11 +166,11 @@ class UDMRestClient:
         if description:
             user_data['properties']['description'] = description
 
-        with self.make_request('POST', f'{UDM_BASE_PATH}users/user/', json=user_data, name='create_user') as response:
+        with self.make_request('POST', f'{UDM_BASE_PATH}/users/user/', json=user_data, name='create_user') as response:
             if response.status_code == 201:
                 location = response.headers.get('Location', '')
                 if location:
-                    user_dn = location.split('/')[-1]
+                    user_dn = location.rsplit('/', 1)[-1]  # TODO: url-undecode
                     self.created_objects.append(('users/user', user_dn))
                     response.success()
                     return True, user_dn
@@ -202,11 +196,11 @@ class UDMRestClient:
         if description:
             group_data['properties']['description'] = description
 
-        with self.make_request('POST', f'{UDM_BASE_PATH}groups/group/', json=group_data, name='create_group') as response:
+        with self.make_request('POST', f'{UDM_BASE_PATH}/groups/group/', json=group_data, name='create_group') as response:
             if response.status_code == 201:
                 location = response.headers.get('Location', '')
                 if location:
-                    group_dn = location.split('/')[-1]
+                    group_dn = location.rsplit('/', 1)[-1]  # TODO: url-undecode
                     self.created_objects.append(('groups/group', group_dn))
                     response.success()
                     return True, group_dn
@@ -218,7 +212,7 @@ class UDMRestClient:
                 return False, ''
 
     def search_objects(
-        self, object_type: str, position: str | None = None, scope: str = 'sub', filter_expr: str | None = None, limit: int | None = None, name: str | None = None,
+        self, object_type: str, position: str | None = None, scope: str = 'sub', filter_expr: str | None = None, name: str | None = None,
     ) -> tuple[bool, int]:
         """Search for objects and return success status and count."""
         params = {}
@@ -229,12 +223,10 @@ class UDMRestClient:
             params['scope'] = scope
         if filter_expr:
             params['filter'] = filter_expr
-        if limit:
-            params['limit'] = limit
 
         search_name = name or f'search_{object_type}'
 
-        with self.make_request('GET', f'{UDM_BASE_PATH}{object_type}/', params=params, name=search_name) as response:
+        with self.make_request('GET', f'{UDM_BASE_PATH}/{object_type}/', params=params, name=search_name) as response:
             if response.status_code == 200:
                 try:
                     data = response.json()
@@ -252,7 +244,7 @@ class UDMRestClient:
         """Get a single object by DN."""
         get_name = name or f'get_{object_type.rsplit("/", maxsplit=1)[-1]}'
 
-        with self.make_request('GET', f'{UDM_BASE_PATH}{object_type}/{object_dn}', name=get_name) as response:
+        with self.make_request('GET', f'{UDM_BASE_PATH}/{object_type}/{object_dn}', name=get_name) as response:
             if response.status_code == 200:
                 try:
                     data = response.json()
@@ -281,7 +273,7 @@ class UDMRestClient:
         # Update the object
         modify_name = name or f'modify_{object_type.rsplit("/", maxsplit=1)[-1]}'
 
-        with self.make_request('PUT', f'{UDM_BASE_PATH}{object_type}/{object_dn}', json=obj_data, name=modify_name) as response:
+        with self.make_request('PUT', f'{UDM_BASE_PATH}/{object_type}/{object_dn}', json=obj_data, name=modify_name) as response:
             if response.status_code in [200, 204]:
                 response.success()
                 return True
@@ -293,7 +285,7 @@ class UDMRestClient:
         """Clean up all objects created by this client."""
         for obj_type, obj_dn in self.created_objects:
             try:
-                with self.make_request('DELETE', f'{UDM_BASE_PATH}{obj_type}/{obj_dn}', name='cleanup_object') as response:
+                with self.make_request('DELETE', f'{UDM_BASE_PATH}/{obj_type}/{obj_dn}', name='cleanup_object') as response:
                     if response.status_code in [200, 204, 404]:
                         logging.debug(f'Cleaned up {obj_type}: {obj_dn}')
                     else:
