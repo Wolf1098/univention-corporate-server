@@ -12,8 +12,13 @@ A python-logging interface compatible wrapper for logging with :py:mod:`univenti
 """
 
 import logging
+import re
+import uuid
+
+from systemd.journal import JournalHandler
 
 import univention.debug as ud
+from univention.logfmter import Logfmter
 
 
 __all__ = ['DebugHandler', 'LevelDependentFormatter', 'Logger', 'basicConfig', 'extendLogger', 'getLogger']
@@ -200,6 +205,9 @@ def basicConfig(
     univention_debug_categories=None,
     do_exit=True,
     delay_init=False,  # until first use
+    use_journald_logging=False,
+    use_structured_logging=False,
+    use_message_ids=False,
     **kwargs,  # ,
 ):
     """
@@ -233,6 +241,16 @@ def basicConfig(
             logger.univention_debug_handler.auto_init = True
             logger.univention_debug_handler.delay_init = delay_init
             logger.univention_debug_handler._init_args = (filename, univention_debug_flush, univention_debug_function)
+        if use_structured_logging:
+            formatter = LogfmtMessagePrependFormatter(keys=['time', 'at', 'lineno', 'pid', 'func'], mapping={"at": "levelname", 'pid': 'process', 'lineno': 'lineno', 'func': 'funcName', 'time': 'asctime'})
+            for handler in logger.handlers:
+                handler.setFormatter(formatter)
+        if use_journald_logging:
+            journal_handler = JournalHandler()
+            journal_handler.setFormatter(_JournaldExtrasFormatter())
+            logger.addHandler(journal_handler)
+        if use_message_ids:
+            logger.addFilter(_MessageIdFilter())
 
 
 class Logger(logging.Logger):
@@ -323,6 +341,44 @@ class LevelDependentFormatter(logging.Formatter):
         if self._style is not None:
             self._style._fmt = self._fmt
         return super().format(record)
+
+
+class _MessageIdFilter(logging.Filter):
+
+    def filter(self, record):
+        record.log_id = uuid.uuid4().hex[:8]
+        return True
+
+
+class LogfmtMessagePrependFormatter(Logfmter):
+
+    def format(self, record):
+        return record.getMessage() + "\t|" + super().format(record)
+
+
+class _JournaldExtrasFormatter(logging.Formatter):
+    """
+    This formatter changes all key-names passed to the logger via the `extra` kwarg
+    so that the name of the key is in all-caps, as journald omits keys passed to the `extra`
+    kwarg that aren't in all-caps.
+    The changes include capitalizing the Key-Name and replacing all non-alphanumeric characters
+    with underscores.
+
+    This has to be a `logging.Formatter`, since a `logging.Filter` would modify the `LogRecord`
+    object used by every `Handler` in the logger. Using the `logging.Filter` allows us to modify
+    a dummy record so that the `extra` kwarg can be changed for journald-logs, without affecting
+    other loghandlers.
+    """
+
+    def format(self, record):
+        dummy_record = logging.LogRecord('', '', '', '', '', '', '', '')
+        standard_attrs = dummy_record.__dict__.keys()
+        extras = {k: v for k, v in record.__dict__.items() if k not in standard_attrs}
+        dummy_record.__dict__ = record.__dict__.copy()
+        for key in extras.keys():
+            new_key = re.sub('[^0-9A-Z]+', '_', key.upper())
+            dummy_record.__dict__[new_key] = dummy_record.__dict__.pop(key)
+        return super().format(dummy_record)
 
 
 class DebugHandler(logging.Handler):

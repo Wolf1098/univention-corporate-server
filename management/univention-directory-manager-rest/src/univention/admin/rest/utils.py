@@ -21,25 +21,29 @@ from univention.config_registry import ucr
 RE_UUID = re.compile('[^A-Fa-f0-9-]')
 
 
-def init_request_id_logging(request_id_context):
+def init_request_context_logging(request_context):
     if not ucr.is_true('directory/manager/rest/debug/prefix-with-request-id', True):
         return
 
-    context_id_filter = ContextIdFilter(request_id_context)
+    context_id_filter = RequestContextFilter(request_context)
     for comp in ('MAIN', 'ADMIN', 'LDAP', 'MODULE', 'tornado.access', 'tornado.application', 'tornado.general'):
         for handler in logging.getLogger(comp).handlers:
             handler.addFilter(context_id_filter)
 
 
-class ContextIdFilter(logging.Filter):
-    def __init__(self, request_id_context):
-        self.request_id_context = request_id_context
+class RequestContextFilter(logging.Filter):
+    def __init__(self, request_context):
+        self.request_context = request_context
 
     def filter(self, record):
         try:
-            record.prefix = '[%s] ' % (self.request_id_context.get())[:12]
+            request_context = self.request_context.get()
         except LookupError:
-            record.prefix = '[no requestID] '  # no context exists yet
+            request_context = {'request_id': 'no requestID'}
+        record.request_id = record.prefix = request_context['request_id'][:10]
+        record.requester_dn = request_context.get('requester_dn', 'no requester DN')
+        record.requester_ip = request_context.get('requester_ip', 'no requester IP')
+        record.requester_hostname = request_context.get('requester_hostname', 'no requester hostname')
         return True
 
 

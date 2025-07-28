@@ -1348,7 +1348,11 @@ class simpleLdap:
 
         log.debug('create object with dn: %s', self.dn)
         log.log(1, 'Create dn=%r;\naddlist=%r;', self.dn, al)
-
+        log.info("Created Object.", extra={
+            'type': self.module.encode('utf-8'),
+            'dn': self.dn,
+            'addlist': {f'property.{add[0]}': add[1]for add in al},
+        })
         # if anything goes wrong we need to remove the already created object, otherwise we run into 'already exists' errors
         try:
             self.lo.authz_connection.add(self.dn, al, serverctrls=serverctrls, response=response, ignore_license=ignore_license)
@@ -1435,7 +1439,12 @@ class simpleLdap:
 
         # FIXME: timeout without exception if objectClass of Object is not exsistant !!
         log.log(1, 'Modify dn=%r;\nmodlist=%r;\noldattr=%r;', self.dn, ml, self.oldattr)
-
+        modifications = {}
+        for prop_name, prop_old, prop_new in ml:
+            if self.hasChanged(prop_name):
+                modifications[f'property.{prop_name}.old'] = prop_old
+                modifications[f'property.{prop_name}.new'] = prop_new
+        log.info("Modified object.", extra={'type': self.module.encode('utf-8'), 'dn': self.dn, **modifications})
         blocklist_entries = univention.admin.blocklist.create_blocklistentry(self)
         try:
             try:
