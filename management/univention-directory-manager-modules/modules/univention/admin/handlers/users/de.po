@@ -756,3 +756,25 @@ msgstr "Profilverzeichnis"
 #: modules/univention/admin/handlers/users/user.py:1294
 msgid "unlimited"
 msgstr "unbegrenzt"
+
+#: modules/univention/admin/handlers/users/external_account.py:32
+#: modules/univention/admin/handlers/users/external_account.py:33
+msgid "External account"
+msgstr "Externes Konto"
+
+#: modules/univention/admin/handlers/users/external_account.py:34
+msgid "External accounts"
+msgstr "Externe Konten"
+
+#: modules/univention/admin/handlers/users/external_account.py:35
+msgid ""
+"This object represents a external management account. It is intended for "
+"functional purposes and is not counted as user object in the license."
+msgstr ""
+"Dieses Objekt stellt ein externes Verwaltungskonto dar. Es "
+"ist für funktionelle Zwecke gedacht und wird nicht als Benutzerobjekt in der "
+"Lizenz gezählt."
+
+#: modules/univention/admin/handlers/users/external_account.py:46
+msgid "UUID of the external account"
+msgstr "UUID des externen Konto"
