@@ -96,3 +96,18 @@ objectclass ( 1.3.6.1.4.1.10176.14 NAME 'univentionPWHistory'
 	SUP top AUXILIARY
 	MAY ( pwhistory )
 	)
+
+# TODO: add to OID list
+attributetype ( 1.3.6.1.4.1.10176.1442.5.2 NAME 'univentionPreferredUsername'
+	SUBSTR caseIgnoreSubstringsMatch
+	DESC 'Preferred username for external accounts'
+	EQUALITY caseIgnoreIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+
+# TODO: add to OID list
+objectClass ( 1.3.6.1.4.1.10176.1442.5.1 NAME 'univentionExternalAccount'
+	DESC 'External account object'
+	SUP top STRUCTURAL
+	MUST ( cn )
+	MAY ( description $ univentionPreferredUsername )
+	)
