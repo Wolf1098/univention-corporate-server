@@ -21,7 +21,7 @@ setup(
     package_dir={'': 'python'},
     description='Univention debugging and logging library',
 
-    py_modules=['univention.debug', 'univention.debug2', 'univention.logging'],
+    py_modules=['univention.debug', 'univention.debug2', 'univention.logging', 'univention.logfmter'],
     ext_modules=[Extension(
         'univention._debug', ['python/univention/py_debug.c'],
         libraries=['univentiondebug'])],
