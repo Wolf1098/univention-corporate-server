@@ -5,7 +5,10 @@ Source: https://updates.software-univention.de/
 
 Files:
   debian/*
-  python/univention/*.py
+  python/univention/__init__.py
+  python/univention/debug.py
+  python/univention/debug2.py
+  python/univention/logging.py
   python/univention/*.c
   tests/*
   setup.py
@@ -34,7 +37,7 @@ License: AGPL-3.0-only
  <https://www.gnu.org/licenses/>.
 
 Files:
-  python/univention/logfmter/*
+  python/univention/logfmter.py
 Copyright: 2022 Joshua Taylor Eppinette
 License: MIT
   Permission is hereby granted, free of charge, to any person obtaining a copy

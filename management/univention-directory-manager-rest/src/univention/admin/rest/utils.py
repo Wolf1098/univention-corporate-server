@@ -40,7 +40,8 @@ class RequestContextFilter(logging.Filter):
             request_context = self.request_context.get()
         except LookupError:
             request_context = {'request_id': 'no requestID'}
-        record.request_id = record.prefix = request_context['request_id'][:10]
+        record.request_id = request_context['request_id'][:10]
+        record.prefix = f"[{record.request_id}]"
         record.requester_dn = request_context.get('requester_dn', 'no requester DN')
         record.requester_ip = request_context.get('requester_ip', 'no requester IP')
         record.requester_hostname = request_context.get('requester_hostname', 'no requester hostname')
