@@ -87,3 +87,4 @@ outside the recommendation.
    user-templates
    last-bind-overlay
    udm-blocklists
+   udm-recyclebin
