@@ -39,7 +39,7 @@ def _reset_debug_loglevel():
 _reset_debug_loglevel()
 
 
-def log_init(filename, log_level=2, log_pid=None):
+def log_init(filename, log_level=2, log_pid=None, **kwargs):
     """
     Initializes Univention debug.
 
@@ -59,6 +59,7 @@ def log_init(filename, log_level=2, log_pid=None):
         univention_debug_flush=True,
         univention_debug_function=False,
         univention_debug_categories=('MAIN', 'LDAP', 'NETWORK', 'SSL', 'ADMIN', 'MODULE', 'AUTH', 'PARSER', 'LOCALE', 'ACL', 'RESOURCES', 'PROTOCOL'),
+        **kwargs,
     )
     if filename not in ('stdout', 'stderr', '/dev/stdout', '/dev/stderr'):
         adm = grp.getgrnam('adm')

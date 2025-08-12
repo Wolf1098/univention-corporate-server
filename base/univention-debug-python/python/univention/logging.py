@@ -246,7 +246,7 @@ def basicConfig(
             for handler in logger.handlers:
                 handler.setFormatter(formatter)
         if use_journald_logging:
-            journal_handler = JournalHandler()
+            journal_handler = JournalHandler(logger.name)
             journal_handler.setFormatter(_JournaldExtrasFormatter())
             logger.addHandler(journal_handler)
         if use_message_ids:

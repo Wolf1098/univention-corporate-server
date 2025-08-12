@@ -51,7 +51,7 @@ class Server:
         self.child_id = None
         setproctitle(proctitle + '   # server')
         # locale must be set before importing UDM!
-        log_init('/dev/stdout', args.debug, args.processes != 1)
+        log_init('/dev/stdout', args.debug, args.processes != 1, **args)
         language = str(Locale(args.language))
         locale.setlocale(locale.LC_MESSAGES, language)
         os.umask(0o077)  # FIXME: should probably be changed, this is what UMC sets
@@ -198,6 +198,8 @@ class Server:
         parser.add_argument('-s', '--unix-socket', help='Bind to a UNIX socket')
         parser.add_argument('-p', '--port', help='Bind to a TCP port')
         parser.add_argument('-c', '--processes', type=int, default=ucr.get_int('directory/manager/rest/processes'), help='How many processes should be forked')
+        parser.add_argument('--journald-logging', help='Use journald logging', type=bool, default=ucr.is_true('directory/manager/rest/journald-logging'))
+        parser.add_argument('--structured-logging', help='Use structured logging messages', type=bool, default=ucr.is_true('directory/manager/rest/structured-logging'))
 
         args = parser.parse_args()
         server.run(args)
