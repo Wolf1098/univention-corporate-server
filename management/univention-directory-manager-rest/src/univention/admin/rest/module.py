@@ -102,7 +102,7 @@ class ResourceBase(SanitizerBase, HAL, HTML):
     def pool_submit(self, *args, **kwargs):
         def context_wrapper(func, *a, **k):
             request_context.set({
-                "request_id": self.request.x_request_header,
+                "request_id": self.request.x_request_id,
                 "requester_dn": self.request.user_dn,
                 "requester_ip": self.request.client_ip,
                 "requester_hostname": self.request.client_host,
