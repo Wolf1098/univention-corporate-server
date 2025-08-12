@@ -3,15 +3,7 @@ Upstream-Name: Univention GmbH
 Upstream-Contact: <package@univention.de>
 Source: https://updates.software-univention.de/
 
-Files:
-  debian/*
-  python/univention/__init__.py
-  python/univention/debug.py
-  python/univention/debug2.py
-  python/univention/logging.py
-  python/univention/*.c
-  tests/*
-  setup.py
+Files: *
 Copyright: 2002-2025 Univention GmbH
 License: AGPL-3.0-only
  The source code of the software contained in this package

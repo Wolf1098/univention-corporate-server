@@ -86,3 +86,17 @@ Description[de]=Gibt die Passwortdatei an, die das bind-Passwort für die LDAP-V
 Description[en]=Specifies the password file containing the bind password for the LDAP connection types "machine-read", "machine-write".
 Type=str
 Categories=service-udm
+
+[directory/manager/rest/debug/journald-logging]
+Description[de]=Definiert, ob Logmeldungen an den Systemd-Journal-Dienst weitergeleitet werden.
+Description[en]=Defines whether log messages are forwarded to the systemd journal service.
+Type=bool
+Default=false
+Categories=service-udm
+
+[directory/manager/rest/debug/structured-logging]
+Description[de]=Definiert, ob strukturierte Logmeldungen ausgegeben werden.
+Description[en]=Defines whether structured log messages are output.
+Type=bool
+Default=false
+Categories=service-udm

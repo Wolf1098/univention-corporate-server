@@ -151,10 +151,12 @@ class Gateway(tornado.web.RequestHandler):
         parser.add_argument('-i', '--interface', help='Bind to specified interface address (%(default)s)', default=ucr['directory/manager/rest/server/address'])
         parser.add_argument('-s', '--unix-socket', help='Bind to specified UNIX socket')
         parser.add_argument('-c', '--processes', type=int, default=ucr.get_int('directory/manager/rest/processes'), help='How many processes should be forked')
+        parser.add_argument('--journald-logging', help='Use journald logging', type=bool, default=ucr.is_true('directory/manager/rest/journald-logging'))
+        parser.add_argument('--structured-logging', help='Use structured logging messages', type=bool, default=ucr.is_true('directory/manager/rest/structured-logging'))
         args = parser.parse_args()
 
         setproctitle(proctitle + '   # gateway main')
-        univention.logging.basicConfig(filename='stdout', univention_debug_level=args.debug)
+        univention.logging.basicConfig(filename='stdout', univention_debug_level=args.debug, use_journald_logging=args.journald_logging, use_structured_logging=args.structured_logging)
 
         tornado.httpclient.AsyncHTTPClient.configure('tornado.curl_httpclient.CurlAsyncHTTPClient')
         tornado.locale.load_gettext_translations('/usr/share/locale', 'univention-directory-manager-rest')

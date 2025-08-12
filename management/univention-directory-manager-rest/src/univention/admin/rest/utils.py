@@ -42,9 +42,12 @@ class RequestContextFilter(logging.Filter):
             request_context = {'request_id': 'no requestID'}
         record.request_id = request_context['request_id'][:10]
         record.prefix = f"[{record.request_id}]"
-        record.requester_dn = request_context.get('requester_dn', 'no requester DN')
-        record.requester_ip = request_context.get('requester_ip', 'no requester IP')
-        record.requester_hostname = request_context.get('requester_hostname', 'no requester hostname')
+        if dn := request_context.get('requester_dn'):
+            record.requester_dn = dn
+        if ip := request_context.get('requester_ip'):
+            record.requester_ip = ip
+        if hostname := request_context.get('requester_hostname'):
+            record.requester_hostname = hostname
         return True
 
 
