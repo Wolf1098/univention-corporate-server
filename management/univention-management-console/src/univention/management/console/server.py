@@ -126,6 +126,12 @@ class Server:
         self.parser.add_argument(
             '--no-daemonize-module-processes', action='store_true', help='starts modules in foreground so that logs go to stdout',
         )
+        self.parser.add_argument(
+            '--journald-logging', type=bool, default=ucr.is_true('umc/server/journald-logging'),
+        )
+        self.parser.add_argument(
+            '--structured-logging', type=bool, default=ucr.is_true('umc/server/structured-logging'),
+        )
         self.options = self.parser.parse_args()
         saml.PORT = self.options.port
         self._child_number = None
@@ -134,7 +140,7 @@ class Server:
         # os.environ['LANG'] = locale.normalize(self.options.language)
 
         # init logging
-        log_init(self.options.log_file, self.options.debug, self.options.processes > 1)
+        log_init(self.options.log_file, self.options.debug, self.options.processes > 1, use_journald_logging=self.options.journald_logging, use_structured_logging=self.options.structured_logging)
 
     def signal_handler_hup(self, signo, frame):
         """Handler for the postrotate action"""

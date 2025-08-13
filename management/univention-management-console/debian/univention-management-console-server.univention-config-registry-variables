@@ -208,3 +208,17 @@ Description[de]=Entfernt sensible Daten aus der Datei meta.json. Diese Option is
 Type=bool
 Categories=management-umc
 Default=false
+
+[umc/server/debug/journald-logging]
+Description[de]=Aktiviert die Protokollierung von UMC-Server Meldungen in den Systemd-Journal. Diese Option ist standardmäßig deaktiviert.
+Description[en]=Enables logging of UMC server messages to the systemd journal. This option is disabled by default.
+Type=bool
+Categories=management-umc
+Default=false
+
+[umc/server/debug/structured-logging]
+Description[de]=Aktiviert die strukturierte Protokollierung von UMC Lognachrichten. Diese Option ist standardmäßig deaktiviert.
+Description[en]=Enables structured logging of UMC log messages. This option is disabled by default.
+Type=bool
+Categories=management-umc
+Default=false
