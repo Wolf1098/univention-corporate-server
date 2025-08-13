@@ -36,18 +36,31 @@ OIDS = set(replication.BUILTIN_OIDS) | set('1.3.6.1.4.1.4203.666.11.1.4.2.12.1')
 # from replication.py
 def _update_schema(fp, attr):
     # type: (IO[str], str) -> None
+    def _insert_linebreak(obj: str) -> str:
+        # Bug 46743: Ensure lines are not longer than 2000 characters or slapd fails to start
+        max_length = 2000
+        obj_lines = []
+        while len(obj) > max_length:
+            linebreak_postion = obj.rindex(' ', 0, max_length)
+            obj_lines.append(obj[:linebreak_postion])
+            obj = obj[linebreak_postion + 1:]
+        obj_lines.append(obj)
+        return '\n '.join(obj_lines)
+
     subschema = ldap.schema.SubSchema(attr)
     for oid in replication.subschema_sort(subschema, ldap.schema.AttributeType):
         if oid in OIDS:
             continue
         obj = subschema.get_obj(ldap.schema.AttributeType, oid)
-        fp.write('attributetype %s\n' % (obj,))
+        obj_wraped = _insert_linebreak(str(obj))
+        fp.write('attributetype %s\n' % (obj_wraped,))
 
     for oid in replication.subschema_sort(subschema, ldap.schema.ObjectClass):
         if oid in OIDS:
             continue
         obj = subschema.get_obj(ldap.schema.ObjectClass, oid)
-        fp.write('objectclass %s\n' % (obj,))
+        obj_wraped = _insert_linebreak(str(obj))
+        fp.write('objectclass %s\n' % (obj_wraped,))
 
 
 def update_schema(lo):
