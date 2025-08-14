@@ -7188,7 +7188,7 @@ class CMPType(select):
         ('property', _('Property')),
         ('dn', _('DN')),
         ('policy', _('Policy')),
-        ('option', _('Option')),
+        ('option', _('App / Option')),
         ('uuid', _('UUID')),
     ]
 
