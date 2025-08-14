@@ -1,8 +1,12 @@
-univention-directory-listener (16.2.0) UNRELEASED; urgency=medium
+univention-directory-listener (16.2.0) unstable; urgency=medium
 
+  [ Ivan Barbecho Delgado ]
   * Bug #58344: UCS 5.2-2 version bump
 
- -- Ivan Barbecho Delgado <ivan.delgado@univention.de>  Wed, 28 May 2025 16:49:48 +0200
+  [ Marius Meschter ]
+  * Bug #58522: fix listener module initialization
+
+ -- Marius Meschter <marius.meschter@univention.de>  Thu, 14 Aug 2025 14:52:31 +0200
 
 univention-directory-listener (16.0.6-1) UNRELEASED; urgency=medium
 
