@@ -19,9 +19,9 @@
 #include <limits.h>
 #include <sys/types.h>
 #define PY_SSIZE_T_CLEAN
-#include <python3.11/Python.h>
-#include <python3.11/compile.h>
-#include <python3.11/marshal.h>
+#include <python3.13/Python.h>
+#include <python3.13/compile.h>
+#include <python3.13/marshal.h>
 #include <univention/debug.h>
 
 #include "cache_lowlevel.h"
@@ -604,8 +604,10 @@ int handlers_reload_all_paths(void) {
 int handlers_init(void) {
 	/* all byte-compiled Univention Python modules are compiled optimized,
 	   so we'll better run handlers optimized as well */
-	Py_OptimizeFlag++;
-	Py_UnbufferedStdioFlag++;
+	PyConfig config;
+	PyConfig_InitPythonConfig(&config);
+	config.optimization_level = 1;
+	config.buffered_stdio = 0;
 	Py_Initialize();
 	handlers_load_all_paths();
 	return 0;
