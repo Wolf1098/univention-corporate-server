@@ -78,7 +78,7 @@ def verify_script(script: bytes, signature: bytes) -> bytes | None:
     os.close(sig_fd)
 
     # verify script
-    cmd = ["apt-key", "verify", sig_name, "-"]
+    cmd = ["gpg", "--verify", sig_name, "-"]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, close_fds=True)
     stdout, _stderr = proc.communicate(script)
