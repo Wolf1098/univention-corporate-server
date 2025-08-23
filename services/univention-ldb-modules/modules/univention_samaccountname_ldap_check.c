@@ -51,6 +51,11 @@
 #define SLAP_LDAPDN_MAXLEN 8192
 #define UF_SERVER_TRUST_ACCOUNT 0x00002000
 
+// LDB control definitions for bypass samaccountname ldap check
+#define LDB_CONTROL_BYPASS_SAMACCOUNTNAME_LDAP_CHECK_OID "1.3.6.1.4.1.7165.4.3.12"
+#define LDB_CONTROL_BYPASS_SAMACCOUNTNAME_LDAP_CHECK_NAME "bypass_samaccountname_ldap_check"
+
+
 #define AUTOPTR_FUNC_NAME(type) type##AutoPtrFree
 #define DEFINE_AUTOPTR_FUNC(type, func) \
     static inline void AUTOPTR_FUNC_NAME(type)(type **_ptr) \
@@ -146,8 +151,21 @@ static int univention_samaccountname_ldap_check_add(struct ldb_module *module, s
 	ldb_debug(ldb, LDB_DEBUG_TRACE, ("%s: ldb_add\n"), ldb_module_get_name(module));
 
 	struct auth_session_info *session_info = (struct auth_session_info *)ldb_get_opaque(ldb, "sessionInfo");
+	if (session_info == NULL) {
+		ldb_debug(ldb, LDB_DEBUG_TRACE, ("%s: no session info available, allowing operation\n"), ldb_module_get_name(module));
+		return ldb_next_request(module, req);
+	}
 	struct security_token *sec_token = (struct security_token *)session_info->security_token;
+	if (sec_token == NULL) {
+		ldb_debug(ldb, LDB_DEBUG_TRACE, ("%s: no security token available, allowing operation\n"), ldb_module_get_name(module));
+		return ldb_next_request(module, req);
+	}
 	struct dom_sid *d_sid = (struct dom_sid *)sec_token->sids;
+	if (d_sid == NULL) {
+		ldb_debug(ldb, LDB_DEBUG_TRACE, ("%s: no domain SID available, allowing operation\n"), ldb_module_get_name(module));
+		return ldb_next_request(module, req);
+	}
+
 	AUTOPTR(char) usersid = sid_to_string(d_sid);
 	ldb_debug(ldb, LDB_DEBUG_TRACE, ("%s: sid: %s\n"), ldb_module_get_name(module), usersid);
 
@@ -365,7 +383,7 @@ static int univention_samaccountname_ldap_check_init_context(struct ldb_module *
 static struct ldb_module_ops ldb_univention_samaccountname_ldap_check_module_ops = {
 	.name	= "univention_samaccountname_ldap_check",
 	.add	= univention_samaccountname_ldap_check_add,
-	// .init_context	= univention_samaccountname_ldap_check_init_context,
+	 .init_context	= univention_samaccountname_ldap_check_init_context,
 };
 
 int ldb_univention_samaccountname_ldap_check_init(const char *version)
